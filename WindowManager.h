@@ -28,8 +28,8 @@ namespace Pharaoh
 
         Display* m_pXDisplay;
         Window m_RootWindow;
-        const int m_argc;
-        const char** m_argv;
+        int m_argc;
+        char** m_argv;
         static WindowManager* m_pInstance;
         static bool m_WMDetected;
     };

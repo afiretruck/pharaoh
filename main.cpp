@@ -15,7 +15,7 @@ using namespace std;
 int main(int argc, char** argv)
 {
     unique_ptr<WindowManager> xWindowManager;
-    xWindowManger.reset(new WindowManager(argc, argv));
+    xWindowManager.reset(new WindowManager(argc, argv));
 
-    return xWindowManger->Run();
+    return xWindowManager->Run();
 }

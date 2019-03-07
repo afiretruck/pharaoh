@@ -120,6 +120,7 @@ int WindowManager::EventLoop()
 int WindowManager::OnXError(Display* pDisplay, XErrorEvent* pEvent)
 {
     // TODO: log the error
+    return 0;
 }
 
 int WindowManager::OnWMDetected(Display* pDisplay, XErrorEvent* pEvent)
@@ -128,4 +129,6 @@ int WindowManager::OnWMDetected(Display* pDisplay, XErrorEvent* pEvent)
     {
         m_WMDetected = true;
     }
+
+    return 0;
 }
