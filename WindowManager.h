@@ -22,6 +22,16 @@ namespace Pharaoh
         int Run();
 
     private:
+	void OnCreateNotify(const XCreateWindowEvent& e);
+	void OnConfigureRequest(const XConfigureRequestEvent& e);
+	void OnConfigureNotify(const XConfigureEvent& e);
+	void OnMapRequest(const XMapRequestEvent& e);
+	void OnReparentNotify(const XReparentEvent& e);
+	void OnMapNotify(const XMapEvent& e);
+	void OnUnmapNotify(const XUnmapEvent& e);
+	void OnDestroyNotify(const XDestroyWindowEvent& e);
+	void Frame(Window w);
+
         static int OnXError(Display* pDisplay, XErrorEvent* pEvent);
         static int OnWMDetected(Display* pDisplay, XErrorEvent* pEvent);
         int EventLoop();

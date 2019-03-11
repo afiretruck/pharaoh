@@ -103,14 +103,64 @@ int WindowManager::EventLoop()
         // dispatch
         switch(event.type)
         {
+	case CreateNotify:
+	    OnCreateNotify(event.xcreatewindow);
+	    break;
+        case ConfigureRequest:
+	    OnConfigureRequest(event.xconfigurerequest);
+	    break;
+	case MapRequest:
+	    OnMapRequest(event.xmaprequest);
+	    break;
         default:
-            cout << "Event ignored.";
+            cout << "Event ignored." << endl;
+	    break;
         }
 
     }
 
 
     return 0;
+}
+
+void WindowManager::OnCreateNotify(const XCreateWindowEvent& e)
+{
+    cout << "OnCreateNotify ignored" << endl;
+}
+
+void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e)
+{
+    XWindowChanges changes;
+    
+    // copy fields from e to changes
+    changes.x = e.x;
+    changes.y = e.y;
+    changes.width = e.width;
+    changes.height = e.height;
+    changes.border_width = e.border_width;
+    changes.sibling = e.above;
+    changes.stack_mode = e.detail;
+
+    // grant request
+    XConfigureWindow(m_pXDisplay, e.window, e.value_mask, &changes);
+
+    // log
+    cout << "Resize " << e.window << " to " << e.width << ", " << e.height << endl;
+}
+
+void WindowManager::OnMapRequest(const XMapRequestEvent& e)
+{
+    Frame(e.window);
+    XMapWindow(m_pXDisplay, e.window);
+}
+
+//--------------------------------------------------------------------------------
+// Helpers
+//--------------------------------------------------------------------------------
+
+void WindowManager::Frame(Window w)
+{
+    
 }
 
 //--------------------------------------------------------------------------------
