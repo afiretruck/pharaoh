@@ -23,28 +23,9 @@ endif
 # output directory lists
 OBJDIR=$(BINDIR)obj
 
-# Are we using the system GCC or the locally compiled one?
-# get the system GCC version (maybe we can use that instead of compiling our own)
-GCCVERSIONMAJOR=$(shell gcc -dumpversion | cut -f1 -d.)
-GCCVERSIONMINOR=$(shell gcc -dumpversion | cut -f2 -d.) 
-GCC61PLUS=$(shell expr $(GCCVERSIONMAJOR) "==" 6 "&" $(GCCVERSIONMINOR) ">=" 1)
-GCC70PLUS=$(shell expr $(GCCVERSIONMAJOR) ">=" 6)
-
-ifeq "$(GCC61PLUS)" "1"
-	CC=$(shell which gcc)
-	CXX=$(shell which g++)
-	AR=$(shell which gcc-ar)
-else ifeq "$(GCC70PLUS)" "1"
-	CC=$(shell which gcc)
-	CXX=$(shell which g++)
-	AR=$(shell which gcc-ar)
-else
-	CC=Lib/Linux/gcc/opt/bin/gcc
-	CXX=Lib/Linux/gcc/opt/bin/g++
-	AR=Lib/Linux/gcc/opt/bin/gcc-ar
-endif
-
-GCCVERSION=$(shell $(CC) -dumpversion)
+CC=$(shell which gcc)
+CXX=$(shell which g++)
+AR=$(shell which gcc-ar)
 
 MANAGERSRC=\
 main.cpp \
