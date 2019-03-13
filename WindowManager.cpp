@@ -6,6 +6,8 @@
 *
 *********************************************************************************/
 
+
+#include <X11/Xutil.h>
 #include "WindowManager.h"
 #include <iostream>
 #include <functional>
@@ -160,7 +162,94 @@ void WindowManager::OnMapRequest(const XMapRequestEvent& e)
 
 void WindowManager::Frame(Window w)
 {
-    
+    // Visual properties
+    const unsigned int BORDER_WIDTH = 3;
+    const unsigned int BORDER_COLOUR = 0xff0000;
+    const unsigned int BG_COLOUR = 0x0000ff;
+
+    // Retrieve attributes of the window to frame
+    XWindowAttributes windowAttributes;
+    XGetWindowAttributes(m_pXDisplay, w, &windowAttributes); // TODO: check return codes!
+
+    // TODO: framing existing top-level windows
+
+    // Create frame
+    const Window frame = XCreateSimpleWindow(
+	m_pXDisplay,
+	m_RootWindow,
+	windowAttributes.x,
+	windowAttributes.y,
+	windowAttributes.width,
+	windowAttributes.height,
+	BORDER_WIDTH,
+	BORDER_COLOUR,
+	BG_COLOUR);
+
+    // select events on the frame
+    XSelectInput(
+	m_pXDisplay,
+	frame,
+	SubstructureRedirectMask | SubstructureNotifyMask);
+
+    // Add client to save set, so that it will be restored and kept alive if we crash
+    XAddToSaveSet(m_pXDisplay, w);
+
+    // reparent the client window to the frame
+    XReparentWindow(
+	m_pXDisplay,
+	w,
+	frame,
+	0, 0); // offset of client window within the frame
+
+    // map the frame
+    XMapWindow(m_pXDisplay, frame);
+
+    // save the frame handle
+    m_Clients[w] = frame;
+
+    // grab universal window management actions on the client window
+    //   a. Move windows with alt + left button.
+    XGrabButton(
+        m_pXDisplay,
+        Button1,
+        Mod1Mask,
+        w,
+        false,
+        ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+        GrabModeAsync,
+        GrabModeAsync,
+        None,
+        None);
+    //   b. Resize windows with alt + right button.
+    XGrabButton(
+        m_pXDisplay,
+        Button3,
+        Mod1Mask,
+        w,
+        false,
+        ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+        GrabModeAsync,
+        GrabModeAsync,
+        None,
+        None);
+    //   c. Kill windows with alt + f4.
+    XGrabKey(
+        m_pXDisplay,
+        XKeysymToKeycode(m_pXDisplay, XK_F4),
+        Mod1Mask,
+        w,
+        false,
+        GrabModeAsync,
+        GrabModeAsync);
+    //   d. Switch windows with alt + tab.
+    XGrabKey(
+        m_pXDisplay,
+        XKeysymToKeycode(m_pXDisplay, XK_Tab),
+        Mod1Mask,
+        w,
+        false,
+        GrabModeAsync,
+        GrabModeAsync); 
 }
 
 //--------------------------------------------------------------------------------

@@ -10,6 +10,7 @@
 #define WINDOWMANAGER_H_INCLUDED
 
 #include <X11/Xlib.h>
+#include <map>
 
 namespace Pharaoh
 {
@@ -40,6 +41,7 @@ namespace Pharaoh
         Window m_RootWindow;
         int m_argc;
         char** m_argv;
+        std::map<Window, Window> m_Clients;
         static WindowManager* m_pInstance;
         static bool m_WMDetected;
     };
