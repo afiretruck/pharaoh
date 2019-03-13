@@ -31,7 +31,8 @@ namespace Pharaoh
 	void OnMapNotify(const XMapEvent& e);
 	void OnUnmapNotify(const XUnmapEvent& e);
 	void OnDestroyNotify(const XDestroyWindowEvent& e);
-	void Frame(Window w);
+	void Frame(Window w, bool createdBeforeWindowManager);
+	void Unframe(Window w);
 
         static int OnXError(Display* pDisplay, XErrorEvent* pEvent);
         static int OnWMDetected(Display* pDisplay, XErrorEvent* pEvent);

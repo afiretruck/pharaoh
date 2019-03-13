@@ -74,6 +74,31 @@ int WindowManager::Run()
         // initialisation successful, set the real error handler.
         XSetErrorHandler(&WindowManager::OnXError);
 
+	// frame any existing top-level windows
+	XGrabServer(m_pXDisplay);
+
+	Window returnedRoot, returnedParent;
+	Window* pTopLevelWindows = nullptr;
+	unsigned int numberOfTopLevelWindows = -1;
+	XQueryTree(
+	    m_pXDisplay,
+	    m_RootWindow,
+	    &returnedRoot,
+	    &returnedParent,
+	    &pTopLevelWindows,
+	    &numberOfTopLevelWindows);
+
+	if(returnedRoot == m_RootWindow)
+	{
+	    for(unsigned int i = 0; i < numberOfTopLevelWindows; i++)
+	    {
+		Frame(pTopLevelWindows[i], true);
+	    }
+	}
+	XFree(pTopLevelWindows);
+
+	XUngrabServer(m_pXDisplay);
+
         // enter main even loop
         returnCode = EventLoop();
     }
@@ -114,6 +139,21 @@ int WindowManager::EventLoop()
 	case MapRequest:
 	    OnMapRequest(event.xmaprequest);
 	    break;
+	case ReparentNotify:
+	    OnReparentNotify(event.xreparent);
+	    break;
+	case MapNotify:
+	    OnMapNotify(event.xmap);
+	    break;
+	case ConfigureNotify:
+	    OnConfigureNotify(event.xconfigure);
+	    break;
+	case UnmapNotify:
+	    OnUnmapNotify(event.xunmap);
+	    break;
+	case DestroyNotify:
+	    OnDestroyNotify(event.xdestroywindow);
+	    break;
         default:
             cout << "Event ignored." << endl;
 	    break;
@@ -143,6 +183,16 @@ void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e)
     changes.sibling = e.above;
     changes.stack_mode = e.detail;
 
+    // if the window is already mapped, re-configure the parent frame
+    auto frameIt = m_Clients.find(e.window);
+    if(frameIt != m_Clients.end())
+    {
+	// configure the parent frame
+	const Window frame = frameIt->second;
+	XConfigureWindow(m_pXDisplay, frame, e.value_mask, &changes);
+	cout << "Resize " << e.window << " to " << e.width << ", " << e.height << endl;
+    }
+
     // grant request
     XConfigureWindow(m_pXDisplay, e.window, e.value_mask, &changes);
 
@@ -150,17 +200,55 @@ void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e)
     cout << "Resize " << e.window << " to " << e.width << ", " << e.height << endl;
 }
 
+void WindowManager::OnConfigureNotify(const XConfigureEvent& e)
+{
+}
+
 void WindowManager::OnMapRequest(const XMapRequestEvent& e)
 {
-    Frame(e.window);
+    Frame(e.window, false);
     XMapWindow(m_pXDisplay, e.window);
+}
+
+void WindowManager::OnReparentNotify(const XReparentEvent& e)
+{
+}
+
+void WindowManager::OnMapNotify(const XMapEvent& e)
+{
+}
+
+void WindowManager::OnUnmapNotify(const XUnmapEvent& e)
+{
+    // ignore if we don't manage this window
+    auto frameIt = m_Clients.find(e.window);
+    if(frameIt == m_Clients.end())
+    {
+	cout << "Ignore UnmapNotify for non-client window " << e.window << endl;
+	return;
+    }
+
+    // ignore the event if it was triggered by reparenting a window that was mapped
+    // before the window manager started.
+    if(e.event == m_RootWindow)
+    {
+        cout << "Ignore UnmapNotify for reparented pre-existing window " << e.window << endl;
+	return;
+    }
+
+    // unframe the window if we do manage it
+    Unframe(e.window);
+}
+
+void WindowManager::OnDestroyNotify(const XDestroyWindowEvent& e)
+{
 }
 
 //--------------------------------------------------------------------------------
 // Helpers
 //--------------------------------------------------------------------------------
 
-void WindowManager::Frame(Window w)
+void WindowManager::Frame(Window w, bool createdBeforeWindowManager)
 {
     // Visual properties
     const unsigned int BORDER_WIDTH = 3;
@@ -171,7 +259,14 @@ void WindowManager::Frame(Window w)
     XWindowAttributes windowAttributes;
     XGetWindowAttributes(m_pXDisplay, w, &windowAttributes); // TODO: check return codes!
 
-    // TODO: framing existing top-level windows
+    // framing existing top-level windows - only frame if visible and doesn't set override_redirect
+    if(true == createdBeforeWindowManager)
+    {
+	if(windowAttributes.override_redirect || windowAttributes.map_state != IsViewable)
+	{
+	    return;
+	}
+    }
 
     // Create frame
     const Window frame = XCreateSimpleWindow(
@@ -250,6 +345,32 @@ void WindowManager::Frame(Window w)
         false,
         GrabModeAsync,
         GrabModeAsync); 
+}
+
+void WindowManager::Unframe(Window w)
+{
+    // reverse the steps taken in Frame()
+    const Window frame = m_Clients[w];
+
+    // unmap the frame
+    XUnmapWindow(m_pXDisplay, frame);
+
+    // reprent client window back to root window
+    XReparentWindow(
+	m_pXDisplay,
+	w,
+	m_RootWindow,
+	0, 0); // offset of client window within root.
+
+    // remove client window from save set, as it is now unrelated to us.
+    XRemoveFromSaveSet(m_pXDisplay, w);
+
+    // destroy the frame
+    XDestroyWindow(m_pXDisplay, frame);
+    m_Clients.erase(w);
+
+    // log
+    cout << "Unframed window " << w << " [" << frame << "]" << endl;
 }
 
 //--------------------------------------------------------------------------------
