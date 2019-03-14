@@ -33,6 +33,11 @@ namespace Pharaoh
 	void OnDestroyNotify(const XDestroyWindowEvent& e);
 	void Frame(Window w, bool createdBeforeWindowManager);
 	void Unframe(Window w);
+	void OnButtonPress(const XButtonEvent& e);
+	void OnButtonRelease(const XButtonEvent& e);
+	void OnMotionNotify(const XMotionEvent& e);
+	void OnKeyPress(const XKeyEvent& e);
+	void OnKeyRelease(const XKeyEvent& e);
 
         static int OnXError(Display* pDisplay, XErrorEvent* pEvent);
         static int OnWMDetected(Display* pDisplay, XErrorEvent* pEvent);
@@ -43,6 +48,15 @@ namespace Pharaoh
         int m_argc;
         char** m_argv;
         std::map<Window, Window> m_Clients;
+	
+	int m_DragCursorStartX = 0;
+	int m_DragCursorStartY = 0;
+	int m_DragFrameStartX = 0;
+	int m_DragFrameStartY = 0;
+	int m_DragFrameStartWidth = 0;
+	int m_DragFrameStartHeight = 0;
+	
+
         static WindowManager* m_pInstance;
         static bool m_WMDetected;
     };

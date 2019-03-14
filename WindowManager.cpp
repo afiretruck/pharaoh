@@ -154,6 +154,24 @@ int WindowManager::EventLoop()
 	case DestroyNotify:
 	    OnDestroyNotify(event.xdestroywindow);
 	    break;
+	case ButtonPress:
+	    OnButtonPress(event.xbutton);
+            break;
+	case ButtonRelease:
+	    OnButtonRelease(event.xbutton);
+            break;
+	case MotionNotify:
+	    // skip any already pending motion events
+	    while(XCheckTypedWindowEvent(
+		m_pXDisplay, event.xmotion.window, MotionNotify, &event)){}
+	    OnMotionNotify(event.xmotion);
+            break;
+	case KeyPress:
+	    OnKeyPress(event.xkey);
+            break;
+	case KeyRelease:
+	    OnKeyRelease(event.xkey);
+	    break;
         default:
             cout << "Event ignored." << endl;
 	    break;
@@ -241,6 +259,58 @@ void WindowManager::OnUnmapNotify(const XUnmapEvent& e)
 }
 
 void WindowManager::OnDestroyNotify(const XDestroyWindowEvent& e)
+{
+}
+
+//--------------------------------------------------------------------------------
+// User input events
+//--------------------------------------------------------------------------------
+
+void WindowManager::OnButtonPress(const XButtonEvent& e)
+{
+    auto frameIt = m_Clients.find(e.window);
+    if(frameIt != m_Clients.end())
+    {
+	// get the frame & save the start position
+	const Window frame = frameIt->second;
+	m_DragCursorStartX = e.x;
+	m_DragCursorStartY = e.y;
+
+	// save the initial window information
+	Window returnedRoot;
+	int x, y;
+	unsigned int width, height, borderWidth, depth;
+	XGetGeometry(
+	    m_pXDisplay,
+	    frame,
+	    &returnedRoot,
+	    &x, &y,
+	    &width, &height,
+	    &borderWidth,
+	    &depth);
+	m_DragFrameStartX = x;
+	m_DragFrameStartY = y;
+	m_DragFrameStartWidth = width;
+	m_DragFrameStartHeight = height;
+
+	// raise the window to the top
+	XRaiseWindow(m_pXDisplay, frame);
+    }
+}
+
+void WindowManager::OnButtonRelease(const XButtonEvent& e)
+{
+}
+
+void WindowManager::OnMotionNotify(const XMotionEvent& e)
+{
+}
+
+void WindowManager::OnKeyPress(const XKeyEvent& e)
+{
+}
+
+void WindowManager::OnKeyRelease(const XKeyEvent& e)
 {
 }
 
