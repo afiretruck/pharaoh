@@ -58,6 +58,10 @@ int WindowManager::Run()
     // get the root window for the X display.
     m_RootWindow = DefaultRootWindow(m_pXDisplay);
 
+    // set some protocol things
+    WM_PROTOCOLS = XInternAtom(m_pXDisplay, "WM_PROTOCOLS", false);
+    WM_DELETE_WINDOW = XInternAtom(m_pXDisplay, "WM_DELETE_WINDOW", false);
+
     // attempt to initialise the window manager with X
     // we require special permissions that only a single
     // Window manager can get. Error-out if we're not the
@@ -268,13 +272,18 @@ void WindowManager::OnDestroyNotify(const XDestroyWindowEvent& e)
 
 void WindowManager::OnButtonPress(const XButtonEvent& e)
 {
+    //m_DragCursorStartX = e.x;
+    //m_DragCursorStartY = e.y;
+
     auto frameIt = m_Clients.find(e.window);
     if(frameIt != m_Clients.end())
     {
 	// get the frame & save the start position
 	const Window frame = frameIt->second;
-	m_DragCursorStartX = e.x;
-	m_DragCursorStartY = e.y;
+	m_DragCursorStartX = e.x_root;
+	m_DragCursorStartY = e.y_root;
+
+	cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
 
 	// save the initial window information
 	Window returnedRoot;
@@ -304,6 +313,48 @@ void WindowManager::OnButtonRelease(const XButtonEvent& e)
 
 void WindowManager::OnMotionNotify(const XMotionEvent& e)
 {
+    auto frameIt = m_Clients.find(e.window);
+    if(frameIt != m_Clients.end())
+    {
+	const Window frame = frameIt->second;
+	int dragPosX = e.x_root;
+	int dragPosY = e.y_root;
+	int deltaX = dragPosX - m_DragCursorStartX;
+	int deltaY = dragPosY - m_DragCursorStartY;
+
+	cout << "Mouse delta (x, y) = " << to_string(deltaX) << ", " << to_string(deltaY) << endl;
+
+	if(e.state & Button1Mask) 
+	{
+	    // alt + left button: Move window.
+	    const int destFramePosX = m_DragFrameStartX + deltaX;
+	    const int destFramePosY = m_DragFrameStartY + deltaY;
+	    XMoveWindow(
+	        m_pXDisplay,
+	        frame,
+	        destFramePosX, destFramePosY);
+	} 
+	else if (e.state & Button3Mask) 
+	{
+	    // alt + right button: Resize window.
+	    // Window dimensions cannot be negative.
+	    const int sizeDeltaX = max(deltaX, -m_DragFrameStartWidth);
+	    const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
+	    const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
+	    const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
+	    
+	    // 1. Resize frame.
+	    XResizeWindow(
+	        m_pXDisplay,
+	        frame,
+	        destFrameSizeWidth, destFrameSizeHeight);
+	    // 2. Resize client window.
+	    XResizeWindow(
+        	m_pXDisplay,
+	        e.window,
+	        destFrameSizeWidth, destFrameSizeHeight);
+	}
+    }
 }
 
 void WindowManager::OnKeyPress(const XKeyEvent& e)

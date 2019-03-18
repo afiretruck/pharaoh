@@ -56,6 +56,9 @@ namespace Pharaoh
 	int m_DragFrameStartWidth = 0;
 	int m_DragFrameStartHeight = 0;
 	
+	// Atom constants.
+	Atom WM_PROTOCOLS;
+	Atom WM_DELETE_WINDOW;
 
         static WindowManager* m_pInstance;
         static bool m_WMDetected;

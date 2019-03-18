@@ -11,6 +11,7 @@
 # start some programs
 xclock &
 xeyes &
+sleep 2 && mate-panel &
 sleep 2 && xterm &
 
 # start the window manager
