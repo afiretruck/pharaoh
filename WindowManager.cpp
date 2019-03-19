@@ -6,15 +6,145 @@
 *
 *********************************************************************************/
 
-
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include "WindowManager.h"
 #include <iostream>
 #include <functional>
+#include <algorithm>
+#include <cstring>
 
 using namespace Pharaoh;
 using namespace std;
 
+string XRequestCodeToString(unsigned char request_code)
+{
+  static const char* const X_REQUEST_CODE_NAMES[] = 
+  {
+      "",
+      "CreateWindow",
+      "ChangeWindowAttributes",
+      "GetWindowAttributes",
+      "DestroyWindow",
+      "DestroySubwindows",
+      "ChangeSaveSet",
+      "ReparentWindow",
+      "MapWindow",
+      "MapSubwindows",
+      "UnmapWindow",
+      "UnmapSubwindows",
+      "ConfigureWindow",
+      "CirculateWindow",
+      "GetGeometry",
+      "QueryTree",
+      "InternAtom",
+      "GetAtomName",
+      "ChangeProperty",
+      "DeleteProperty",
+      "GetProperty",
+      "ListProperties",
+      "SetSelectionOwner",
+      "GetSelectionOwner",
+      "ConvertSelection",
+      "SendEvent",
+      "GrabPointer",
+      "UngrabPointer",
+      "GrabButton",
+      "UngrabButton",
+      "ChangeActivePointerGrab",
+      "GrabKeyboard",
+      "UngrabKeyboard",
+      "GrabKey",
+      "UngrabKey",
+      "AllowEvents",
+      "GrabServer",
+      "UngrabServer",
+      "QueryPointer",
+      "GetMotionEvents",
+      "TranslateCoords",
+      "WarpPointer",
+      "SetInputFocus",
+      "GetInputFocus",
+      "QueryKeymap",
+      "OpenFont",
+      "CloseFont",
+      "QueryFont",
+      "QueryTextExtents",
+      "ListFonts",
+      "ListFontsWithInfo",
+      "SetFontPath",
+      "GetFontPath",
+      "CreatePixmap",
+      "FreePixmap",
+      "CreateGC",
+      "ChangeGC",
+      "CopyGC",
+      "SetDashes",
+      "SetClipRectangles",
+      "FreeGC",
+      "ClearArea",
+      "CopyArea",
+      "CopyPlane",
+      "PolyPoint",
+      "PolyLine",
+      "PolySegment",
+      "PolyRectangle",
+      "PolyArc",
+      "FillPoly",
+      "PolyFillRectangle",
+      "PolyFillArc",
+      "PutImage",
+      "GetImage",
+      "PolyText8",
+      "PolyText16",
+      "ImageText8",
+      "ImageText16",
+      "CreateColormap",
+      "FreeColormap",
+      "CopyColormapAndFree",
+      "InstallColormap",
+      "UninstallColormap",
+      "ListInstalledColormaps",
+      "AllocColor",
+      "AllocNamedColor",
+      "AllocColorCells",
+      "AllocColorPlanes",
+      "FreeColors",
+      "StoreColors",
+      "StoreNamedColor",
+      "QueryColors",
+      "LookupColor",
+      "CreateCursor",
+      "CreateGlyphCursor",
+      "FreeCursor",
+      "RecolorCursor",
+      "QueryBestSize",
+      "QueryExtension",
+      "ListExtensions",
+      "ChangeKeyboardMapping",
+      "GetKeyboardMapping",
+      "ChangeKeyboardControl",
+      "GetKeyboardControl",
+      "Bell",
+      "ChangePointerControl",
+      "GetPointerControl",
+      "SetScreenSaver",
+      "GetScreenSaver",
+      "ChangeHosts",
+      "ListHosts",
+      "SetAccessControl",
+      "SetCloseDownMode",
+      "KillClient",
+      "RotateProperties",
+      "ForceScreenSaver",
+      "SetPointerMapping",
+      "GetPointerMapping",
+      "SetModifierMapping",
+      "GetModifierMapping",
+      "NoOperation",
+  };
+  return X_REQUEST_CODE_NAMES[request_code];
+}
 
 //--------------------------------------------------------------------------------
 // static data
@@ -359,6 +489,58 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
 
 void WindowManager::OnKeyPress(const XKeyEvent& e)
 {
+    if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_pXDisplay, XK_F4))) 
+    {
+    	// alt + f4: Close window.
+	//
+	// There are two ways to tell an X window to close. The first is to send it
+	// a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
+	// has not explicitly marked itself as supporting this more civilized
+	// behavior (using XSetWMProtocols()), we kill it with XKillClient().
+	Atom* supported_protocols;
+	int num_supported_protocols;
+	if (XGetWMProtocols(m_pXDisplay, e.window, &supported_protocols, &num_supported_protocols) &&
+            (::std::find(supported_protocols, supported_protocols + num_supported_protocols,
+                     WM_DELETE_WINDOW) !=
+         supported_protocols + num_supported_protocols)) 
+	{
+	    cout << "Gracefully deleting window " << e.window;
+
+	    // 1. Construct message.
+	    XEvent msg;
+	    memset(&msg, 0, sizeof(msg));
+	    msg.xclient.type = ClientMessage;
+	    msg.xclient.message_type = WM_PROTOCOLS;
+	    msg.xclient.window = e.window;
+	    msg.xclient.format = 32;
+	    msg.xclient.data.l[0] = WM_DELETE_WINDOW;
+
+	    // 2. Send message to window to be closed.
+	    XSendEvent(m_pXDisplay, e.window, false, 0, &msg);
+	} 
+	else 
+	{
+	    cout << "Killing window " << e.window;
+	    XKillClient(m_pXDisplay, e.window);
+	}
+    } 
+    else if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_pXDisplay, XK_Tab))) 
+    {
+	// alt + tab: Switch window.
+	// 1. Find next window.
+	auto i = m_Clients.find(e.window);
+	if(i != m_Clients.end())
+	{
+	    ++i;
+            if (i == m_Clients.end()) 
+	    {
+		i = m_Clients.begin();
+	    }
+	    // 2. Raise and set focus.
+	    XRaiseWindow(m_pXDisplay, i->second);
+	    XSetInputFocus(m_pXDisplay, i->first, RevertToPointerRoot, CurrentTime);
+	}
+    }
 }
 
 void WindowManager::OnKeyRelease(const XKeyEvent& e)
@@ -498,9 +680,20 @@ void WindowManager::Unframe(Window w)
 // Error handling
 //--------------------------------------------------------------------------------
 
-int WindowManager::OnXError(Display* pDisplay, XErrorEvent* pEvent)
+int WindowManager::OnXError(Display* pDisplay, XErrorEvent* e)
 {
-    // TODO: log the error
+    const int MAX_ERROR_TEXT_LENGTH = 1024;
+    char error_text[MAX_ERROR_TEXT_LENGTH];
+
+    XGetErrorText(pDisplay, e->error_code, error_text, sizeof(error_text));
+    cout << "Received X error:\n"
+         << "    Request: " << int(e->request_code)
+         << " - " << XRequestCodeToString(e->request_code) << "\n"
+         << "    Error code: " << int(e->error_code)
+         << " - " << error_text << "\n"
+         << "    Resource ID: " << e->resourceid << endl;
+
+    // The return value is ignored.
     return 0;
 }
 
