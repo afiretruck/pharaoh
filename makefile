@@ -29,7 +29,9 @@ AR=$(shell which gcc-ar)
 
 MANAGERSRC=\
 main.cpp \
-WindowManager.cpp
+WindowManager.cpp \
+Window.cpp \
+Utils.cpp
 
 COMPILE.cxx= @echo "  CXX    "$< && $(CXX) 
 COMPILE.c= @echo "  CC     "$< && $(CC)

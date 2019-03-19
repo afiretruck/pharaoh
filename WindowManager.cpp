@@ -8,6 +8,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
+#include "Utils.h"
 #include "WindowManager.h"
 #include <iostream>
 #include <functional>
@@ -16,135 +17,6 @@
 
 using namespace Pharaoh;
 using namespace std;
-
-string XRequestCodeToString(unsigned char request_code)
-{
-  static const char* const X_REQUEST_CODE_NAMES[] = 
-  {
-      "",
-      "CreateWindow",
-      "ChangeWindowAttributes",
-      "GetWindowAttributes",
-      "DestroyWindow",
-      "DestroySubwindows",
-      "ChangeSaveSet",
-      "ReparentWindow",
-      "MapWindow",
-      "MapSubwindows",
-      "UnmapWindow",
-      "UnmapSubwindows",
-      "ConfigureWindow",
-      "CirculateWindow",
-      "GetGeometry",
-      "QueryTree",
-      "InternAtom",
-      "GetAtomName",
-      "ChangeProperty",
-      "DeleteProperty",
-      "GetProperty",
-      "ListProperties",
-      "SetSelectionOwner",
-      "GetSelectionOwner",
-      "ConvertSelection",
-      "SendEvent",
-      "GrabPointer",
-      "UngrabPointer",
-      "GrabButton",
-      "UngrabButton",
-      "ChangeActivePointerGrab",
-      "GrabKeyboard",
-      "UngrabKeyboard",
-      "GrabKey",
-      "UngrabKey",
-      "AllowEvents",
-      "GrabServer",
-      "UngrabServer",
-      "QueryPointer",
-      "GetMotionEvents",
-      "TranslateCoords",
-      "WarpPointer",
-      "SetInputFocus",
-      "GetInputFocus",
-      "QueryKeymap",
-      "OpenFont",
-      "CloseFont",
-      "QueryFont",
-      "QueryTextExtents",
-      "ListFonts",
-      "ListFontsWithInfo",
-      "SetFontPath",
-      "GetFontPath",
-      "CreatePixmap",
-      "FreePixmap",
-      "CreateGC",
-      "ChangeGC",
-      "CopyGC",
-      "SetDashes",
-      "SetClipRectangles",
-      "FreeGC",
-      "ClearArea",
-      "CopyArea",
-      "CopyPlane",
-      "PolyPoint",
-      "PolyLine",
-      "PolySegment",
-      "PolyRectangle",
-      "PolyArc",
-      "FillPoly",
-      "PolyFillRectangle",
-      "PolyFillArc",
-      "PutImage",
-      "GetImage",
-      "PolyText8",
-      "PolyText16",
-      "ImageText8",
-      "ImageText16",
-      "CreateColormap",
-      "FreeColormap",
-      "CopyColormapAndFree",
-      "InstallColormap",
-      "UninstallColormap",
-      "ListInstalledColormaps",
-      "AllocColor",
-      "AllocNamedColor",
-      "AllocColorCells",
-      "AllocColorPlanes",
-      "FreeColors",
-      "StoreColors",
-      "StoreNamedColor",
-      "QueryColors",
-      "LookupColor",
-      "CreateCursor",
-      "CreateGlyphCursor",
-      "FreeCursor",
-      "RecolorCursor",
-      "QueryBestSize",
-      "QueryExtension",
-      "ListExtensions",
-      "ChangeKeyboardMapping",
-      "GetKeyboardMapping",
-      "ChangeKeyboardControl",
-      "GetKeyboardControl",
-      "Bell",
-      "ChangePointerControl",
-      "GetPointerControl",
-      "SetScreenSaver",
-      "GetScreenSaver",
-      "ChangeHosts",
-      "ListHosts",
-      "SetAccessControl",
-      "SetCloseDownMode",
-      "KillClient",
-      "RotateProperties",
-      "ForceScreenSaver",
-      "SetPointerMapping",
-      "GetPointerMapping",
-      "SetModifierMapping",
-      "GetModifierMapping",
-      "NoOperation",
-  };
-  return X_REQUEST_CODE_NAMES[request_code];
-}
 
 //--------------------------------------------------------------------------------
 // static data
@@ -208,30 +80,30 @@ int WindowManager::Run()
         // initialisation successful, set the real error handler.
         XSetErrorHandler(&WindowManager::OnXError);
 
-	// frame any existing top-level windows
-	XGrabServer(m_pXDisplay);
+    // frame any existing top-level windows
+    XGrabServer(m_pXDisplay);
 
-	Window returnedRoot, returnedParent;
-	Window* pTopLevelWindows = nullptr;
-	unsigned int numberOfTopLevelWindows = -1;
-	XQueryTree(
-	    m_pXDisplay,
-	    m_RootWindow,
-	    &returnedRoot,
-	    &returnedParent,
-	    &pTopLevelWindows,
-	    &numberOfTopLevelWindows);
+    Window returnedRoot, returnedParent;
+    Window* pTopLevelWindows = nullptr;
+    unsigned int numberOfTopLevelWindows = -1;
+    XQueryTree(
+        m_pXDisplay,
+        m_RootWindow,
+        &returnedRoot,
+        &returnedParent,
+        &pTopLevelWindows,
+        &numberOfTopLevelWindows);
 
-	if(returnedRoot == m_RootWindow)
-	{
-	    for(unsigned int i = 0; i < numberOfTopLevelWindows; i++)
-	    {
-		Frame(pTopLevelWindows[i], true);
-	    }
-	}
-	XFree(pTopLevelWindows);
+    if(returnedRoot == m_RootWindow)
+    {
+        for(unsigned int i = 0; i < numberOfTopLevelWindows; i++)
+        {
+            Frame(pTopLevelWindows[i], true);
+        }
+    }
+    XFree(pTopLevelWindows);
 
-	XUngrabServer(m_pXDisplay);
+    XUngrabServer(m_pXDisplay);
 
         // enter main even loop
         returnCode = EventLoop();
@@ -264,51 +136,51 @@ int WindowManager::EventLoop()
         // dispatch
         switch(event.type)
         {
-	case CreateNotify:
-	    OnCreateNotify(event.xcreatewindow);
-	    break;
+    case CreateNotify:
+        OnCreateNotify(event.xcreatewindow);
+        break;
         case ConfigureRequest:
-	    OnConfigureRequest(event.xconfigurerequest);
-	    break;
-	case MapRequest:
-	    OnMapRequest(event.xmaprequest);
-	    break;
-	case ReparentNotify:
-	    OnReparentNotify(event.xreparent);
-	    break;
-	case MapNotify:
-	    OnMapNotify(event.xmap);
-	    break;
-	case ConfigureNotify:
-	    OnConfigureNotify(event.xconfigure);
-	    break;
-	case UnmapNotify:
-	    OnUnmapNotify(event.xunmap);
-	    break;
-	case DestroyNotify:
-	    OnDestroyNotify(event.xdestroywindow);
-	    break;
-	case ButtonPress:
-	    OnButtonPress(event.xbutton);
+        OnConfigureRequest(event.xconfigurerequest);
+        break;
+    case MapRequest:
+        OnMapRequest(event.xmaprequest);
+        break;
+    case ReparentNotify:
+        OnReparentNotify(event.xreparent);
+        break;
+    case MapNotify:
+        OnMapNotify(event.xmap);
+        break;
+    case ConfigureNotify:
+        OnConfigureNotify(event.xconfigure);
+        break;
+    case UnmapNotify:
+        OnUnmapNotify(event.xunmap);
+        break;
+    case DestroyNotify:
+        OnDestroyNotify(event.xdestroywindow);
+        break;
+    case ButtonPress:
+        OnButtonPress(event.xbutton);
             break;
-	case ButtonRelease:
-	    OnButtonRelease(event.xbutton);
+    case ButtonRelease:
+        OnButtonRelease(event.xbutton);
             break;
-	case MotionNotify:
-	    // skip any already pending motion events
-	    while(XCheckTypedWindowEvent(
-		m_pXDisplay, event.xmotion.window, MotionNotify, &event)){}
-	    OnMotionNotify(event.xmotion);
+    case MotionNotify:
+        // skip any already pending motion events
+        while(XCheckTypedWindowEvent(
+        m_pXDisplay, event.xmotion.window, MotionNotify, &event)){}
+        OnMotionNotify(event.xmotion);
             break;
-	case KeyPress:
-	    OnKeyPress(event.xkey);
+    case KeyPress:
+        OnKeyPress(event.xkey);
             break;
-	case KeyRelease:
-	    OnKeyRelease(event.xkey);
-	    break;
+    case KeyRelease:
+        OnKeyRelease(event.xkey);
+        break;
         default:
             cout << "Event ignored." << endl;
-	    break;
+        break;
         }
 
     }
@@ -339,10 +211,10 @@ void WindowManager::OnConfigureRequest(const XConfigureRequestEvent& e)
     auto frameIt = m_Clients.find(e.window);
     if(frameIt != m_Clients.end())
     {
-	// configure the parent frame
-	const Window frame = frameIt->second;
-	XConfigureWindow(m_pXDisplay, frame, e.value_mask, &changes);
-	cout << "Resize " << e.window << " to " << e.width << ", " << e.height << endl;
+    // configure the parent frame
+    const Window frame = frameIt->second;
+    XConfigureWindow(m_pXDisplay, frame, e.value_mask, &changes);
+    cout << "Resize " << e.window << " to " << e.width << ", " << e.height << endl;
     }
 
     // grant request
@@ -376,8 +248,8 @@ void WindowManager::OnUnmapNotify(const XUnmapEvent& e)
     auto frameIt = m_Clients.find(e.window);
     if(frameIt == m_Clients.end())
     {
-	cout << "Ignore UnmapNotify for non-client window " << e.window << endl;
-	return;
+        cout << "Ignore UnmapNotify for non-client window " << e.window << endl;
+        return;
     }
 
     // ignore the event if it was triggered by reparenting a window that was mapped
@@ -385,7 +257,7 @@ void WindowManager::OnUnmapNotify(const XUnmapEvent& e)
     if(e.event == m_RootWindow)
     {
         cout << "Ignore UnmapNotify for reparented pre-existing window " << e.window << endl;
-	return;
+        return;
     }
 
     // unframe the window if we do manage it
@@ -408,32 +280,32 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
     auto frameIt = m_Clients.find(e.window);
     if(frameIt != m_Clients.end())
     {
-	// get the frame & save the start position
-	const Window frame = frameIt->second;
-	m_DragCursorStartX = e.x_root;
-	m_DragCursorStartY = e.y_root;
+    // get the frame & save the start position
+    const Window frame = frameIt->second;
+    m_DragCursorStartX = e.x_root;
+    m_DragCursorStartY = e.y_root;
 
-	cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
+    cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
 
-	// save the initial window information
-	Window returnedRoot;
-	int x, y;
-	unsigned int width, height, borderWidth, depth;
-	XGetGeometry(
-	    m_pXDisplay,
-	    frame,
-	    &returnedRoot,
-	    &x, &y,
-	    &width, &height,
-	    &borderWidth,
-	    &depth);
-	m_DragFrameStartX = x;
-	m_DragFrameStartY = y;
-	m_DragFrameStartWidth = width;
-	m_DragFrameStartHeight = height;
+    // save the initial window information
+    Window returnedRoot;
+    int x, y;
+    unsigned int width, height, borderWidth, depth;
+    XGetGeometry(
+        m_pXDisplay,
+        frame,
+        &returnedRoot,
+        &x, &y,
+        &width, &height,
+        &borderWidth,
+        &depth);
+    m_DragFrameStartX = x;
+    m_DragFrameStartY = y;
+    m_DragFrameStartWidth = width;
+    m_DragFrameStartHeight = height;
 
-	// raise the window to the top
-	XRaiseWindow(m_pXDisplay, frame);
+    // raise the window to the top
+    XRaiseWindow(m_pXDisplay, frame);
     }
 }
 
@@ -446,44 +318,44 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
     auto frameIt = m_Clients.find(e.window);
     if(frameIt != m_Clients.end())
     {
-	const Window frame = frameIt->second;
-	int dragPosX = e.x_root;
-	int dragPosY = e.y_root;
-	int deltaX = dragPosX - m_DragCursorStartX;
-	int deltaY = dragPosY - m_DragCursorStartY;
+    const Window frame = frameIt->second;
+    int dragPosX = e.x_root;
+    int dragPosY = e.y_root;
+    int deltaX = dragPosX - m_DragCursorStartX;
+    int deltaY = dragPosY - m_DragCursorStartY;
 
-	cout << "Mouse delta (x, y) = " << to_string(deltaX) << ", " << to_string(deltaY) << endl;
+    cout << "Mouse delta (x, y) = " << to_string(deltaX) << ", " << to_string(deltaY) << endl;
 
-	if(e.state & Button1Mask) 
-	{
-	    // alt + left button: Move window.
-	    const int destFramePosX = m_DragFrameStartX + deltaX;
-	    const int destFramePosY = m_DragFrameStartY + deltaY;
-	    XMoveWindow(
-	        m_pXDisplay,
-	        frame,
-	        destFramePosX, destFramePosY);
-	} 
-	else if (e.state & Button3Mask) 
-	{
-	    // alt + right button: Resize window.
-	    // Window dimensions cannot be negative.
-	    const int sizeDeltaX = max(deltaX, -m_DragFrameStartWidth);
-	    const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
-	    const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
-	    const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
-	    
-	    // 1. Resize frame.
-	    XResizeWindow(
-	        m_pXDisplay,
-	        frame,
-	        destFrameSizeWidth, destFrameSizeHeight);
-	    // 2. Resize client window.
-	    XResizeWindow(
-        	m_pXDisplay,
-	        e.window,
-	        destFrameSizeWidth, destFrameSizeHeight);
-	}
+    if(e.state & Button1Mask) 
+    {
+        // alt + left button: Move window.
+        const int destFramePosX = m_DragFrameStartX + deltaX;
+        const int destFramePosY = m_DragFrameStartY + deltaY;
+        XMoveWindow(
+            m_pXDisplay,
+            frame,
+            destFramePosX, destFramePosY);
+    } 
+    else if (e.state & Button3Mask) 
+    {
+        // alt + right button: Resize window.
+        // Window dimensions cannot be negative.
+        const int sizeDeltaX = max(deltaX, -m_DragFrameStartWidth);
+        const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
+        const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
+        const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
+        
+        // 1. Resize frame.
+        XResizeWindow(
+            m_pXDisplay,
+            frame,
+            destFrameSizeWidth, destFrameSizeHeight);
+        // 2. Resize client window.
+        XResizeWindow(
+            m_pXDisplay,
+            e.window,
+            destFrameSizeWidth, destFrameSizeHeight);
+    }
     }
 }
 
@@ -491,55 +363,55 @@ void WindowManager::OnKeyPress(const XKeyEvent& e)
 {
     if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_pXDisplay, XK_F4))) 
     {
-    	// alt + f4: Close window.
-	//
-	// There are two ways to tell an X window to close. The first is to send it
-	// a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
-	// has not explicitly marked itself as supporting this more civilized
-	// behavior (using XSetWMProtocols()), we kill it with XKillClient().
-	Atom* supported_protocols;
-	int num_supported_protocols;
-	if (XGetWMProtocols(m_pXDisplay, e.window, &supported_protocols, &num_supported_protocols) &&
+        // alt + f4: Close window.
+    //
+    // There are two ways to tell an X window to close. The first is to send it
+    // a message of type WM_PROTOCOLS and value WM_DELETE_WINDOW. If the client
+    // has not explicitly marked itself as supporting this more civilized
+    // behavior (using XSetWMProtocols()), we kill it with XKillClient().
+    Atom* supported_protocols;
+    int num_supported_protocols;
+    if (XGetWMProtocols(m_pXDisplay, e.window, &supported_protocols, &num_supported_protocols) &&
             (::std::find(supported_protocols, supported_protocols + num_supported_protocols,
                      WM_DELETE_WINDOW) !=
          supported_protocols + num_supported_protocols)) 
-	{
-	    cout << "Gracefully deleting window " << e.window;
+    {
+        cout << "Gracefully deleting window " << e.window;
 
-	    // 1. Construct message.
-	    XEvent msg;
-	    memset(&msg, 0, sizeof(msg));
-	    msg.xclient.type = ClientMessage;
-	    msg.xclient.message_type = WM_PROTOCOLS;
-	    msg.xclient.window = e.window;
-	    msg.xclient.format = 32;
-	    msg.xclient.data.l[0] = WM_DELETE_WINDOW;
+        // 1. Construct message.
+        XEvent msg;
+        memset(&msg, 0, sizeof(msg));
+        msg.xclient.type = ClientMessage;
+        msg.xclient.message_type = WM_PROTOCOLS;
+        msg.xclient.window = e.window;
+        msg.xclient.format = 32;
+        msg.xclient.data.l[0] = WM_DELETE_WINDOW;
 
-	    // 2. Send message to window to be closed.
-	    XSendEvent(m_pXDisplay, e.window, false, 0, &msg);
-	} 
-	else 
-	{
-	    cout << "Killing window " << e.window;
-	    XKillClient(m_pXDisplay, e.window);
-	}
+        // 2. Send message to window to be closed.
+        XSendEvent(m_pXDisplay, e.window, false, 0, &msg);
+    } 
+    else 
+    {
+        cout << "Killing window " << e.window;
+        XKillClient(m_pXDisplay, e.window);
+    }
     } 
     else if ((e.state & Mod1Mask) && (e.keycode == XKeysymToKeycode(m_pXDisplay, XK_Tab))) 
     {
-	// alt + tab: Switch window.
-	// 1. Find next window.
-	auto i = m_Clients.find(e.window);
-	if(i != m_Clients.end())
-	{
-	    ++i;
+    // alt + tab: Switch window.
+    // 1. Find next window.
+    auto i = m_Clients.find(e.window);
+    if(i != m_Clients.end())
+    {
+        ++i;
             if (i == m_Clients.end()) 
-	    {
-		i = m_Clients.begin();
-	    }
-	    // 2. Raise and set focus.
-	    XRaiseWindow(m_pXDisplay, i->second);
-	    XSetInputFocus(m_pXDisplay, i->first, RevertToPointerRoot, CurrentTime);
-	}
+        {
+        i = m_Clients.begin();
+        }
+        // 2. Raise and set focus.
+        XRaiseWindow(m_pXDisplay, i->second);
+        XSetInputFocus(m_pXDisplay, i->first, RevertToPointerRoot, CurrentTime);
+    }
     }
 }
 
@@ -565,39 +437,39 @@ void WindowManager::Frame(Window w, bool createdBeforeWindowManager)
     // framing existing top-level windows - only frame if visible and doesn't set override_redirect
     if(true == createdBeforeWindowManager)
     {
-	if(windowAttributes.override_redirect || windowAttributes.map_state != IsViewable)
-	{
-	    return;
-	}
+        if(windowAttributes.override_redirect || windowAttributes.map_state != IsViewable)
+        {
+            return;
+        }
     }
 
     // Create frame
     const Window frame = XCreateSimpleWindow(
-	m_pXDisplay,
-	m_RootWindow,
-	windowAttributes.x,
-	windowAttributes.y,
-	windowAttributes.width,
-	windowAttributes.height,
-	BORDER_WIDTH,
-	BORDER_COLOUR,
-	BG_COLOUR);
+        m_pXDisplay,
+        m_RootWindow,
+        windowAttributes.x,
+        windowAttributes.y,
+        windowAttributes.width,
+        windowAttributes.height,
+        BORDER_WIDTH,
+        BORDER_COLOUR,
+        BG_COLOUR);
 
     // select events on the frame
     XSelectInput(
-	m_pXDisplay,
-	frame,
-	SubstructureRedirectMask | SubstructureNotifyMask);
+        m_pXDisplay,
+        frame,
+        SubstructureRedirectMask | SubstructureNotifyMask);
 
     // Add client to save set, so that it will be restored and kept alive if we crash
     XAddToSaveSet(m_pXDisplay, w);
 
     // reparent the client window to the frame
     XReparentWindow(
-	m_pXDisplay,
-	w,
-	frame,
-	0, 0); // offset of client window within the frame
+        m_pXDisplay,
+        w,
+        frame,
+        0, 0); // offset of client window within the frame
 
     // map the frame
     XMapWindow(m_pXDisplay, frame);
@@ -660,10 +532,10 @@ void WindowManager::Unframe(Window w)
 
     // reprent client window back to root window
     XReparentWindow(
-	m_pXDisplay,
-	w,
-	m_RootWindow,
-	0, 0); // offset of client window within root.
+    m_pXDisplay,
+    w,
+    m_RootWindow,
+    0, 0); // offset of client window within root.
 
     // remove client window from save set, as it is now unrelated to us.
     XRemoveFromSaveSet(m_pXDisplay, w);
