@@ -32,6 +32,12 @@ void PharaohWindow::Configure(XWindowChanges& windowChanges, unsigned int valueM
     if(true == m_IsMapped)
     {
         XConfigureWindow(m_pXDisplay, m_FrameWindow, valueMask, &windowChanges);
+        // TODO: check error codes
+
+        m_X = windowChanges.x;
+        m_Y = windowChanges.y;
+        m_Width = windowChanges.width;
+        m_Height = windowChanges.height;
     }
 
     // grant request
