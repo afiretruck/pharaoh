@@ -21,10 +21,6 @@ PharaohWindow::PharaohWindow(Display* pXDisplay, Window rootWindow, Window clien
     , m_RootWindow(rootWindow)
     , m_ClientWindow(clientWindow)
 {
-    cout << "New window Ctor:" << endl;
-    cout << "    m_pXDisplay = " << pXDisplay
-    << "\n    m_RootWindow = " << rootWindow
-    << "\n    m_ClientWindow = " << clientWindow << endl << endl;
 }
 
 PharaohWindow::PharaohWindow(
@@ -43,10 +39,6 @@ PharaohWindow::PharaohWindow(
     , m_Width(width)
     , m_Height(height)
 {
-    cout << "Existing window Ctor:" << endl;
-    cout << "    m_pXDisplay = " << pXDisplay
-    << "\n    m_RootWindow = " << rootWindow
-    << "\n    m_ClientWindow = " << clientWindow << endl << endl;
 }
 
 //--------------------------------------------------------------------------------
@@ -54,16 +46,17 @@ PharaohWindow::PharaohWindow(
 //--------------------------------------------------------------------------------
 void PharaohWindow::Configure(XWindowChanges& windowChanges, unsigned int valueMask)
 {
+    // store position and size
+    m_X = windowChanges.x;
+    m_Y = windowChanges.y;
+    m_Width = windowChanges.width;
+    m_Height = windowChanges.height;
+
     // if the window is already mapped, re-configure the parent frame
     if(true == m_IsMapped)
     {
         XConfigureWindow(m_pXDisplay, m_FrameWindow, valueMask, &windowChanges);
         // TODO: check error codes
-
-        m_X = windowChanges.x;
-        m_Y = windowChanges.y;
-        m_Width = windowChanges.width;
-        m_Height = windowChanges.height;
     }
 
     // grant request
@@ -102,6 +95,10 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         BORDER_COLOUR,
         BG_COLOUR);
     decorationWindows.emplace(m_FrameWindow);
+
+    // save the window size
+    m_Width = windowAttributes.width;
+    m_Height = windowAttributes.height;
 
     // select events on the frame
     XSelectInput(
@@ -238,11 +235,10 @@ void PharaohWindow::SetSize(const unsigned int width, const unsigned int height)
     if(true == m_IsMapped)
     {
         // Resize frame.
-        XResizeWindow(m_pXDisplay, m_FrameWindow, width, height);
+        XResizeWindow(m_pXDisplay, m_FrameWindow, m_Width, m_Height);
 
         // Resize client window.
-        // TODO: calculate client window size (it should be smaller than the frame)
-        XResizeWindow(m_pXDisplay, m_ClientWindow, width, height);
+        XResizeWindow(m_pXDisplay, m_ClientWindow, m_Width, m_Height);
     }
 }
 

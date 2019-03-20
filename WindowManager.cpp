@@ -328,6 +328,7 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
         m_DragFrameStartY = y;
         m_DragFrameStartWidth = width;
         m_DragFrameStartHeight = height;
+        cout << "    (x, y, width, height) = " << x << ", " << y << ", " << width << ", " << height << endl;
 
         // raise the window to the top
         frameIt->second->Raise();
@@ -365,6 +366,7 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
             const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
             const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
             const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
+            cout << "    Resize window to (x, y) = " << destFrameSizeWidth << ", " << destFrameSizeHeight << endl;
             frameIt->second->SetSize(destFrameSizeWidth, destFrameSizeHeight);        
         }
     }
