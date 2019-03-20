@@ -10,6 +10,7 @@
 #define WINDOW_H_INCLUDED
 
 #include <X11/Xlib.h>
+#include <set>
 
 namespace Pharaoh
 {
@@ -45,10 +46,12 @@ namespace Pharaoh
         void Configure(XWindowChanges& windowChanges, unsigned int valueMask);
 
         //! \brief Show the window. This triggers creation of any decorations.
-        void Map();
+        //! \param decorationWindows Global set of window handles to ignore various events for.
+        void Map(std::set<Window>& decorationWindows);
 
         //! \brief Hide the window. This will destroy any decorations.
-        void Unmap();
+        //! \param decorationWindows Global set of window handles to ignore various events for.
+        void Unmap(std::set<Window>& decorationWindows);
 
         //! \brief Return true if the window is mapped (on-screen), false if not.
         bool IsMapped() const;

@@ -8,6 +8,7 @@
 
 #include "Window.h"
 #include <X11/Xutil.h>
+#include <iostream>
 
 using namespace std;
 using namespace Pharaoh;
@@ -20,7 +21,10 @@ PharaohWindow::PharaohWindow(Display* pXDisplay, Window rootWindow, Window clien
     , m_RootWindow(rootWindow)
     , m_ClientWindow(clientWindow)
 {
-
+    cout << "New window Ctor:" << endl;
+    cout << "    m_pXDisplay = " << pXDisplay
+    << "\n    m_RootWindow = " << rootWindow
+    << "\n    m_ClientWindow = " << clientWindow << endl << endl;
 }
 
 PharaohWindow::PharaohWindow(
@@ -39,7 +43,10 @@ PharaohWindow::PharaohWindow(
     , m_Width(width)
     , m_Height(height)
 {
-    
+    cout << "Existing window Ctor:" << endl;
+    cout << "    m_pXDisplay = " << pXDisplay
+    << "\n    m_RootWindow = " << rootWindow
+    << "\n    m_ClientWindow = " << clientWindow << endl << endl;
 }
 
 //--------------------------------------------------------------------------------
@@ -67,7 +74,7 @@ void PharaohWindow::Configure(XWindowChanges& windowChanges, unsigned int valueM
 //--------------------------------------------------------------------------------
 // Map & Unmap
 //--------------------------------------------------------------------------------
-void PharaohWindow::Map()
+void PharaohWindow::Map(set<Window>& decorationWindows)
 {
     if(true == m_IsMapped)
     {
@@ -94,6 +101,7 @@ void PharaohWindow::Map()
         BORDER_WIDTH,
         BORDER_COLOUR,
         BG_COLOUR);
+    decorationWindows.emplace(m_FrameWindow);
 
     // select events on the frame
     XSelectInput(
@@ -102,7 +110,7 @@ void PharaohWindow::Map()
         SubstructureRedirectMask | SubstructureNotifyMask);
 
     // Add client to save set, so that it will be restored and kept alive if we crash
-    XAddToSaveSet(m_pXDisplay, m_FrameWindow);
+    XAddToSaveSet(m_pXDisplay, m_ClientWindow);
 
     // reparent the client window to the frame
     XReparentWindow(
@@ -120,7 +128,7 @@ void PharaohWindow::Map()
         m_pXDisplay,
         Button1,
         Mod1Mask,
-        m_FrameWindow,
+        m_ClientWindow,
         false,
         ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
         GrabModeAsync,
@@ -132,7 +140,7 @@ void PharaohWindow::Map()
         m_pXDisplay,
         Button3,
         Mod1Mask,
-        m_FrameWindow,
+        m_ClientWindow,
         false,
         ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
         GrabModeAsync,
@@ -144,7 +152,7 @@ void PharaohWindow::Map()
         m_pXDisplay,
         XKeysymToKeycode(m_pXDisplay, XK_F4),
         Mod1Mask,
-        m_FrameWindow,
+        m_ClientWindow,
         false,
         GrabModeAsync,
         GrabModeAsync);
@@ -153,7 +161,7 @@ void PharaohWindow::Map()
         m_pXDisplay,
         XKeysymToKeycode(m_pXDisplay, XK_Tab),
         Mod1Mask,
-        m_FrameWindow,
+        m_ClientWindow,
         false,
         GrabModeAsync,
         GrabModeAsync);
@@ -164,7 +172,7 @@ void PharaohWindow::Map()
     m_IsMapped = true;
 }
 
-void PharaohWindow::Unmap()
+void PharaohWindow::Unmap(set<Window>& decorationWindows)
 {
     if(false == m_IsMapped)
     {
@@ -176,16 +184,17 @@ void PharaohWindow::Unmap()
 
     // reprent client window back to root window
     XReparentWindow(
-    m_pXDisplay,
-    m_ClientWindow,
-    m_RootWindow,
-    0, 0); // offset of client window within root.
+        m_pXDisplay,
+        m_ClientWindow,
+        m_RootWindow,
+        0, 0); // offset of client window within root.
 
     // remove client window from save set, as it is now unrelated to us.
     XRemoveFromSaveSet(m_pXDisplay, m_ClientWindow);
 
     // destroy the frame
     XDestroyWindow(m_pXDisplay, m_FrameWindow);
+    decorationWindows.erase(m_FrameWindow);
 
     m_IsMapped = false;
 }

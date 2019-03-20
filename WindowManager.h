@@ -34,8 +34,6 @@ namespace Pharaoh
         void OnMapNotify(const XMapEvent& e);
         void OnUnmapNotify(const XUnmapEvent& e);
         void OnDestroyNotify(const XDestroyWindowEvent& e);
-        void Frame(Window w, bool createdBeforeWindowManager);
-        void Unframe(Window w);
         void OnButtonPress(const XButtonEvent& e);
         void OnButtonRelease(const XButtonEvent& e);
         void OnMotionNotify(const XMotionEvent& e);
@@ -53,8 +51,8 @@ namespace Pharaoh
 
         // map the XWindows to their handler classes 
         // (the Window key is the handle for the un-framed client window)
-        //std::map<Window, std::unique_ptr<PharaohWindow>> m_Clients;
-        std::map<Window, Window> m_Clients;
+        std::map<Window, std::unique_ptr<PharaohWindow>> m_Clients;
+        std::set<Window> m_DecorationWindows;
 
         int m_DragCursorStartX = 0;
         int m_DragCursorStartY = 0;
