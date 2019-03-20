@@ -22,6 +22,23 @@ namespace Pharaoh
         //! \param clientWindow The actual X window to handle.
         PharaohWindow(Display* pXDisplay, Window rootWindow, Window clientWindow);
 
+        //! \brief ctor - Create a PharaohWindow object. Represents a top-level window.
+        //! \param pXDisplay The X-display to use.
+        //! \param rootWindow The root window of the given X-display.
+        //! \param clientWindow The actual X window to handle.
+        //! \param x Initial x-position.
+        //! \param y Initial y-position.
+        //! \param width Initial width.
+        //! \param height Initial height.
+        PharaohWindow(
+            Display* pXDisplay, 
+            Window rootWindow, 
+            Window clientWindow, 
+            int x, 
+            int y, 
+            unsigned int width, 
+            unsigned int height);
+
         //! \brief Configure the window.
         //! \param windowChanges The window configuration to pass to X with XConfigureWindow.
         //! \param valueMask Passed to XConfigureWindow.
@@ -57,6 +74,12 @@ namespace Pharaoh
         //! \param width The output variable for the window width.
         //! \param height The output variable for the window height.
         void GetSize(unsigned int& width, unsigned int& height) const;
+
+        //! \brief If this window is mapped, bring it to the top and give it focus
+        void RaiseAndSetFocus();
+
+        //! \brief If the window is mapped, bring it to the top
+        void Raise();
 
     private:
         // core data

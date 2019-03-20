@@ -23,6 +23,25 @@ PharaohWindow::PharaohWindow(Display* pXDisplay, Window rootWindow, Window clien
 
 }
 
+PharaohWindow::PharaohWindow(
+    Display* pXDisplay, 
+    Window rootWindow, 
+    Window clientWindow, 
+    int x, 
+    int y, 
+    unsigned int width, 
+    unsigned int height)
+    : m_pXDisplay(pXDisplay)
+    , m_RootWindow(rootWindow)
+    , m_ClientWindow(clientWindow)
+    , m_X(x)
+    , m_Y(y)
+    , m_Width(width)
+    , m_Height(height)
+{
+    
+}
+
 //--------------------------------------------------------------------------------
 // Configure
 //--------------------------------------------------------------------------------
@@ -222,4 +241,18 @@ void PharaohWindow::GetSize(unsigned int& width, unsigned int& height) const
 {
     width = m_Width;
     height = m_Height;
+}
+
+//--------------------------------------------------------------------------------
+// Others
+//--------------------------------------------------------------------------------
+void PharaohWindow::RaiseAndSetFocus()
+{
+    XRaiseWindow(m_pXDisplay, m_FrameWindow);
+    XSetInputFocus(m_pXDisplay, m_ClientWindow, RevertToPointerRoot, CurrentTime);
+}
+
+void PharaohWindow::Raise()
+{
+    XRaiseWindow(m_pXDisplay, m_FrameWindow);
 }
