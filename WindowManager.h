@@ -52,6 +52,7 @@ namespace Pharaoh
         // map the XWindows to their handler classes 
         // (the Window key is the handle for the un-framed client window)
         std::map<Window, std::unique_ptr<PharaohWindow>> m_Clients;
+        std::map<Window, PharaohWindow*> m_FramesToClients;
         std::set<Window> m_DecorationWindows;
 
         int m_DragCursorStartX = 0;

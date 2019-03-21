@@ -84,6 +84,30 @@ namespace Pharaoh
         //! \brief If the window is mapped, bring it to the top
         void Raise();
 
+        enum LocationInFrame
+        {
+            LocationInFrame_None,
+            LocationInFrame_DragBar,
+            LocationInFrame_ResizeFrameLeftSide,
+            LocationInFrame_ResizeFrameRightSide,
+            LocationInFrame_ResizeFrameTop,
+            LocationInFrame_ResizeFrameBottom,
+            LocationInFrame_ResizeFrameTopLeft,
+            LocationInFrame_ResizeFrameTopRight,
+            LocationInFrame_ResizeFrameBottomLeft,
+            LocationInFrame_ResizeFrameBottomRight,
+
+        };
+
+        //! \brief Get the frame window for this window. Only valid if the window is mapped.
+        Window GetFrameWindow() const;
+
+        //! \brief  Takes the frame-relative coordinates given in x & y and 
+        //!         returns which part of the frame those coordinates fall into.
+        //! \param x The X-coordinate relative to the frame.
+        //! \param y The Y-coordinate relative to the frame.
+        LocationInFrame GetPositionInFrame(const int x, const int y) const;
+
     private:
         // core data
         Display* m_pXDisplay;

@@ -121,6 +121,7 @@ int WindowManager::Run()
                 }
 
                 pNewWindow->Map(m_DecorationWindows);
+                m_FramesToClients[pNewWindow->GetFrameWindow()] = pNewWindow;
             }
         }
         XFree(pTopLevelWindows);
@@ -256,6 +257,7 @@ void WindowManager::OnMapRequest(const XMapRequestEvent& e)
     if(it != m_Clients.end())
     {
         it->second->Map(m_DecorationWindows);
+        m_FramesToClients[it->second->GetFrameWindow()] = it->second.get();
     }
 }
 
@@ -286,6 +288,7 @@ void WindowManager::OnUnmapNotify(const XUnmapEvent& e)
     }
 
     // unframe the window if we do manage it
+    m_FramesToClients.erase(frameIt->second->GetFrameWindow());
     frameIt->second->Unmap(m_DecorationWindows);
 }
 
@@ -296,6 +299,7 @@ void WindowManager::OnDestroyNotify(const XDestroyWindowEvent& e)
     {
         if(it->second->IsMapped())
         {
+            m_FramesToClients.erase(it->second->GetFrameWindow());
             it->second->Unmap(m_DecorationWindows);
         }
         m_Clients.erase(it);
@@ -332,6 +336,38 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
 
         // raise the window to the top
         frameIt->second->Raise();
+    }
+    else
+    {
+        auto frameWindowIt = m_FramesToClients.find(e.window);
+        if(frameWindowIt != m_FramesToClients.end())
+        {
+            PharaohWindow::LocationInFrame cursorLocation = frameWindowIt->second->GetPositionInFrame(e.x, e.y);
+            switch(cursorLocation)
+            {
+            case PharaohWindow::LocationInFrame_DragBar:
+                cout << "button press on client frame drag bar" << endl;
+                break;
+            case PharaohWindow::LocationInFrame_ResizeFrameLeftSide:
+            case PharaohWindow::LocationInFrame_ResizeFrameRightSide:
+                cout << "button press on client frame resize frame horizontal" << endl;
+                break;
+            case PharaohWindow::LocationInFrame_ResizeFrameTop:
+            case PharaohWindow::LocationInFrame_ResizeFrameBottom:
+                cout << "button press on client frame resize frame vertical" << endl;
+                break;
+            case PharaohWindow::LocationInFrame_ResizeFrameTopRight:
+            case PharaohWindow::LocationInFrame_ResizeFrameBottomLeft:
+                cout << "button press on client frame resize frame diagonal top right/bottom left" << endl;
+                break;
+            case PharaohWindow::LocationInFrame_ResizeFrameTopLeft:
+            case PharaohWindow::LocationInFrame_ResizeFrameBottomRight:
+                cout << "button press on client frame resize frame diagonal top left/bottom right" << endl;
+                break;
+            default:
+                break;
+            }
+        }
     }
 }
 

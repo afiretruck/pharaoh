@@ -167,6 +167,20 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         GrabModeAsync,
         GrabModeAsync);
 
+
+    // grab input on the frame itself for move and resize
+    XGrabButton(
+        m_pXDisplay,
+        Button1,
+        None,
+        m_FrameWindow,
+        false,
+        ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+        GrabModeAsync,
+        GrabModeAsync,
+        None,
+        None);
+
     // finally map the client window
     XMapWindow(m_pXDisplay, m_ClientWindow);
 
@@ -264,4 +278,36 @@ void PharaohWindow::RaiseAndSetFocus()
 void PharaohWindow::Raise()
 {
     XRaiseWindow(m_pXDisplay, m_FrameWindow);
+}
+
+Window PharaohWindow::GetFrameWindow() const
+{
+    return m_FrameWindow;
+}
+
+PharaohWindow::LocationInFrame PharaohWindow::GetPositionInFrame(const int x, const int y) const
+{
+    LocationInFrame location = LocationInFrame_None;
+
+    bool xInsideClient = (x > (int)CLIENT_INSET && x < (int)(m_Width + CLIENT_INSET));
+    bool yInsideClient = (y > (int)CLIENT_YOFFSET && y < (int)(m_Height + CLIENT_YOFFSET));
+    if(false == xInsideClient || false == yInsideClient)
+    {
+        // cursor is not inside the client frame
+        // is it inside the drag bar?
+        bool xInsideDragBar = xInsideClient; // drag bar has same x-size as the client window
+        bool yInsideDragBar = (y > (int)CLIENT_INSET && y < (int)CLIENT_YOFFSET);
+        if(true == xInsideDragBar && true == yInsideDragBar)
+        {
+            location = LocationInFrame_DragBar;
+        }
+        else
+        {
+            // cursor is within the resize frame, but where?
+            
+        }
+        
+    }
+
+    return location;
 }
