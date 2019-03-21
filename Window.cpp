@@ -13,6 +13,14 @@
 using namespace std;
 using namespace Pharaoh;
 
+
+// Visual properties
+const unsigned int BORDER_WIDTH = 2; // decorative border 
+const unsigned int BORDER_COLOUR = 0xff0000;
+const unsigned int BG_COLOUR = 0x0000ff;
+const unsigned int CLIENT_YOFFSET = 24;
+const unsigned int CLIENT_INSET = 8; // (how much border there is on the left, right and bottom)
+
 //--------------------------------------------------------------------------------
 // ctor
 //--------------------------------------------------------------------------------
@@ -74,11 +82,6 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         return;
     }
 
-    // Visual properties
-    const unsigned int BORDER_WIDTH = 3;
-    const unsigned int BORDER_COLOUR = 0xff0000;
-    const unsigned int BG_COLOUR = 0x0000ff;
-
     // Retrieve attributes of the window to frame
     XWindowAttributes windowAttributes;
     XGetWindowAttributes(m_pXDisplay, m_ClientWindow, &windowAttributes); // TODO: check return codes!
@@ -89,8 +92,8 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         m_RootWindow,
         windowAttributes.x,
         windowAttributes.y,
-        windowAttributes.width,
-        windowAttributes.height,
+        windowAttributes.width + (CLIENT_INSET * 2),
+        windowAttributes.height + CLIENT_YOFFSET + CLIENT_INSET,
         BORDER_WIDTH,
         BORDER_COLOUR,
         BG_COLOUR);
@@ -114,7 +117,8 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         m_pXDisplay,
         m_ClientWindow,
         m_FrameWindow,
-        0, 0); // offset of client window within the frame
+        CLIENT_INSET, 
+        CLIENT_YOFFSET); // offset of client window within the frame
 
     // map the frame
     XMapWindow(m_pXDisplay, m_FrameWindow);
@@ -235,7 +239,7 @@ void PharaohWindow::SetSize(const unsigned int width, const unsigned int height)
     if(true == m_IsMapped)
     {
         // Resize frame.
-        XResizeWindow(m_pXDisplay, m_FrameWindow, m_Width, m_Height);
+        XResizeWindow(m_pXDisplay, m_FrameWindow, m_Width + (CLIENT_INSET * 2), m_Height + (CLIENT_INSET + CLIENT_YOFFSET));
 
         // Resize client window.
         XResizeWindow(m_pXDisplay, m_ClientWindow, m_Width, m_Height);
