@@ -37,6 +37,8 @@ struct WindowManager::DragOperation
     int frameStartY;
     unsigned int frameStartWidth;
     unsigned int frameStartHeight;
+    unsigned int frameMininumWidth;
+    unsigned int frameMininumHeight;
 
     DragType dragType;
 };
@@ -416,6 +418,8 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
                    y,
                    width,
                    height,
+                   10,
+                   10,
                    theDragType
                 });
 
@@ -488,6 +492,9 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
                         m_xCurrentDragOperation->frameStartY + deltaY);
                     break;
                 case DragOperation::DragType_ResizeAll:
+                    frameWindowIt->second->SetSize(
+                        (unsigned int)max((int)m_xCurrentDragOperation->frameStartWidth + deltaX, (int)m_xCurrentDragOperation->frameMininumWidth),
+                        (unsigned int)max((int)m_xCurrentDragOperation->frameStartHeight + deltaY, (int)m_xCurrentDragOperation->frameMininumHeight));
                     break;
                 case DragOperation::DragType_ResizeHorizonal:
                     break;
