@@ -61,6 +61,12 @@ namespace Pharaoh
         int m_DragFrameStartY = 0;
         int m_DragFrameStartWidth = 0;
         int m_DragFrameStartHeight = 0;
+
+        struct DragOperation;
+        std::unique_ptr<DragOperation> m_xCurrentDragOperation;
+
+        int m_NewDragCursorStartX = 0;
+        int m_NewDragCursorStartY = 0;
         
         Atom WM_PROTOCOLS;
         Atom WM_DELETE_WINDOW;

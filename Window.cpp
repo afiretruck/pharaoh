@@ -20,6 +20,7 @@ const unsigned int BORDER_COLOUR = 0xff0000;
 const unsigned int BG_COLOUR = 0x0000ff;
 const unsigned int CLIENT_YOFFSET = 24;
 const unsigned int CLIENT_INSET = 8; // (how much border there is on the left, right and bottom)
+const unsigned int CLIENT_HOTCORNER = 12;
 
 //--------------------------------------------------------------------------------
 // ctor
@@ -304,7 +305,51 @@ PharaohWindow::LocationInFrame PharaohWindow::GetPositionInFrame(const int x, co
         else
         {
             // cursor is within the resize frame, but where?
-            
+            // is it in any of the corners?
+            bool xInsideLeftCorners = (x < (int)CLIENT_HOTCORNER);
+            bool xInsideRightCorners = (x > (int)(CLIENT_INSET + m_Width - (CLIENT_HOTCORNER - CLIENT_INSET)));
+            bool yInsideTopCorners = (y < (int)CLIENT_HOTCORNER);
+            bool yInsideBottomCorners = (y > (int)(CLIENT_YOFFSET + m_Height - (CLIENT_HOTCORNER - CLIENT_INSET)));
+            if(true == xInsideLeftCorners && true == yInsideTopCorners)
+            {
+                location = LocationInFrame_ResizeFrameTopLeft;
+            }
+            else if(true == xInsideLeftCorners && true == yInsideBottomCorners)
+            {
+                location = LocationInFrame_ResizeFrameBottomLeft;
+            }
+            else if(true == xInsideRightCorners && true == yInsideTopCorners)
+            {
+                location = LocationInFrame_ResizeFrameTopRight;
+            }
+            else if(true == xInsideRightCorners && true == yInsideBottomCorners)
+            {
+                location = LocationInFrame_ResizeFrameBottomRight;
+            }
+            else
+            {
+                // not in a corner, which part of the resize frame is it in?
+                bool xInsideLeftSide = (x < (int)CLIENT_INSET);
+                bool xInsideRightSide = (x > (int)(CLIENT_INSET + m_Width));
+                bool yInsideTopSide = (y < (int)CLIENT_INSET);
+                bool yInsideBottomSide = (y > (int)(CLIENT_YOFFSET + m_Height));
+                if(true == xInsideLeftSide)
+                {
+                    location = LocationInFrame_ResizeFrameLeft;
+                }
+                else if(true == xInsideRightSide)
+                {
+                    location = LocationInFrame_ResizeFrameRight;
+                }
+                else if(true == yInsideTopSide)
+                {
+                    location = LocationInFrame_ResizeFrameTop;
+                }
+                else if(true == yInsideBottomSide)
+                {
+                    location = LocationInFrame_ResizeFrameBottom;
+                }
+            }
         }
         
     }

@@ -88,8 +88,8 @@ namespace Pharaoh
         {
             LocationInFrame_None,
             LocationInFrame_DragBar,
-            LocationInFrame_ResizeFrameLeftSide,
-            LocationInFrame_ResizeFrameRightSide,
+            LocationInFrame_ResizeFrameLeft,
+            LocationInFrame_ResizeFrameRight,
             LocationInFrame_ResizeFrameTop,
             LocationInFrame_ResizeFrameBottom,
             LocationInFrame_ResizeFrameTopLeft,

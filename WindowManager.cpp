@@ -19,6 +19,29 @@ using namespace Pharaoh;
 using namespace std;
 
 //--------------------------------------------------------------------------------
+// stores information about the current window drag operation
+//--------------------------------------------------------------------------------
+struct WindowManager::DragOperation
+{
+    enum DragType
+    {
+        DragType_Move,
+        DragType_ResizeHorizonal,
+        DragType_ResizeVertical,
+        DragType_ResizeAll
+    };
+
+    int cursorStartX;
+    int cursorStartY;
+    int frameStartX;
+    int frameStartY;
+    unsigned int frameStartWidth;
+    unsigned int frameStartHeight;
+
+    DragType dragType;
+};
+
+//--------------------------------------------------------------------------------
 // static data
 //--------------------------------------------------------------------------------
 
@@ -343,29 +366,61 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
         if(frameWindowIt != m_FramesToClients.end())
         {
             PharaohWindow::LocationInFrame cursorLocation = frameWindowIt->second->GetPositionInFrame(e.x, e.y);
-            switch(cursorLocation)
+            if(cursorLocation != PharaohWindow::LocationInFrame_None)
             {
-            case PharaohWindow::LocationInFrame_DragBar:
-                cout << "button press on client frame drag bar" << endl;
-                break;
-            case PharaohWindow::LocationInFrame_ResizeFrameLeftSide:
-            case PharaohWindow::LocationInFrame_ResizeFrameRightSide:
-                cout << "button press on client frame resize frame horizontal" << endl;
-                break;
-            case PharaohWindow::LocationInFrame_ResizeFrameTop:
-            case PharaohWindow::LocationInFrame_ResizeFrameBottom:
-                cout << "button press on client frame resize frame vertical" << endl;
-                break;
-            case PharaohWindow::LocationInFrame_ResizeFrameTopRight:
-            case PharaohWindow::LocationInFrame_ResizeFrameBottomLeft:
-                cout << "button press on client frame resize frame diagonal top right/bottom left" << endl;
-                break;
-            case PharaohWindow::LocationInFrame_ResizeFrameTopLeft:
-            case PharaohWindow::LocationInFrame_ResizeFrameBottomRight:
-                cout << "button press on client frame resize frame diagonal top left/bottom right" << endl;
-                break;
-            default:
-                break;
+                // save the drag start position
+                // start a drag operation on this window
+                int x, y;
+                unsigned int width, height;
+
+                frameWindowIt->second->GetLocation(x, y);
+                frameWindowIt->second->GetSize(width, height);
+
+                DragOperation::DragType theDragType;
+
+                switch(cursorLocation)
+                {
+                case PharaohWindow::LocationInFrame_DragBar:
+                    cout << "button press on client frame drag bar" << endl;
+                    theDragType = DragOperation::DragType_Move;
+                    break;
+                case PharaohWindow::LocationInFrame_ResizeFrameLeft:
+                case PharaohWindow::LocationInFrame_ResizeFrameRight:
+                    cout << "button press on client frame resize frame horizontal" << endl;
+                    theDragType = DragOperation::DragType_ResizeHorizonal;
+                    break;
+                case PharaohWindow::LocationInFrame_ResizeFrameTop:
+                case PharaohWindow::LocationInFrame_ResizeFrameBottom:
+                    cout << "button press on client frame resize frame vertical" << endl;
+                    theDragType = DragOperation::DragType_ResizeVertical;
+                    break;
+                case PharaohWindow::LocationInFrame_ResizeFrameTopRight:
+                case PharaohWindow::LocationInFrame_ResizeFrameBottomLeft:
+                    cout << "button press on client frame resize frame diagonal top right/bottom left" << endl;
+                    theDragType = DragOperation::DragType_ResizeAll;
+                    break;
+                case PharaohWindow::LocationInFrame_ResizeFrameTopLeft:
+                case PharaohWindow::LocationInFrame_ResizeFrameBottomRight:
+                    cout << "button press on client frame resize frame diagonal top left/bottom right" << endl;
+                    theDragType = DragOperation::DragType_ResizeAll;
+                    break;
+                default:
+                    break;
+                }
+
+                m_xCurrentDragOperation.reset(new DragOperation
+                {
+                   e.x_root,
+                   e.y_root,
+                   x,
+                   y,
+                   width,
+                   height,
+                   theDragType
+                });
+
+                // raise the window to the top
+                frameWindowIt->second->Raise();
             }
         }
     }
@@ -373,6 +428,12 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
 
 void WindowManager::OnButtonRelease(const XButtonEvent& e)
 {
+    auto frameWindowIt = m_FramesToClients.find(e.window);
+    if(frameWindowIt != m_FramesToClients.end())
+    {
+        cout << "mouse released on client window" << endl;
+        m_xCurrentDragOperation.release();
+    }
 }
 
 void WindowManager::OnMotionNotify(const XMotionEvent& e)
@@ -404,6 +465,38 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
             const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
             cout << "    Resize window to (x, y) = " << destFrameSizeWidth << ", " << destFrameSizeHeight << endl;
             frameIt->second->SetSize(destFrameSizeWidth, destFrameSizeHeight);        
+        }
+    }
+    else
+    {
+        auto frameWindowIt = m_FramesToClients.find(e.window);
+        if(frameWindowIt != m_FramesToClients.end())
+        {
+            // is a drag operation in progress?
+            if((e.state & Button1Mask) > 0 && m_xCurrentDragOperation.get() != nullptr)
+            {
+                // get mouse delta since the drag started
+                const int deltaX = e.x_root - m_xCurrentDragOperation->cursorStartX;
+                const int deltaY = e.y_root - m_xCurrentDragOperation->cursorStartY;
+
+                // what is the drag operation?
+                switch(m_xCurrentDragOperation->dragType)
+                {
+                case DragOperation::DragType_Move:
+                    frameWindowIt->second->SetLocation(
+                        m_xCurrentDragOperation->frameStartX + deltaX, 
+                        m_xCurrentDragOperation->frameStartY + deltaY);
+                    break;
+                case DragOperation::DragType_ResizeAll:
+                    break;
+                case DragOperation::DragType_ResizeHorizonal:
+                    break;
+                case DragOperation::DragType_ResizeVertical:
+                    break;
+                default:
+                    break;
+                }
+            }
         }
     }
 }
