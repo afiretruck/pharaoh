@@ -341,26 +341,28 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
     if(frameIt != m_Clients.end())
     {
         // get the frame & save the start position
-        m_DragCursorStartX = e.x_root;
-        m_DragCursorStartY = e.y_root;
+        // m_DragCursorStartX = e.x_root;
+        // m_DragCursorStartY = e.y_root;
 
-        cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
+        // cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
 
-        // save the initial window information
-        int x, y;
-        unsigned int width, height;
+        // // save the initial window information
+        // int x, y;
+        // unsigned int width, height;
 
-        frameIt->second->GetLocation(x, y);
-        frameIt->second->GetSize(width, height);
+        // frameIt->second->GetLocation(x, y);
+        // frameIt->second->GetSize(width, height);
 
-        m_DragFrameStartX = x;
-        m_DragFrameStartY = y;
-        m_DragFrameStartWidth = width;
-        m_DragFrameStartHeight = height;
-        cout << "    (x, y, width, height) = " << x << ", " << y << ", " << width << ", " << height << endl;
+        // m_DragFrameStartX = x;
+        // m_DragFrameStartY = y;
+        // m_DragFrameStartWidth = width;
+        // m_DragFrameStartHeight = height;
+        // cout << "    (x, y, width, height) = " << x << ", " << y << ", " << width << ", " << height << endl;
 
-        // raise the window to the top
-        frameIt->second->Raise();
+        // cout << "Mouse pressed on client" << endl;
+
+        // // raise the window to the top
+        // frameIt->second->RaiseAndSetFocus();
     }
     else
     {
@@ -424,7 +426,7 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
                 });
 
                 // raise the window to the top
-                frameWindowIt->second->Raise();
+                frameWindowIt->second->RaiseAndSetFocus();
             }
         }
     }
@@ -437,6 +439,8 @@ void WindowManager::OnButtonRelease(const XButtonEvent& e)
     {
         cout << "mouse released on client window" << endl;
         m_xCurrentDragOperation.release();
+
+        frameWindowIt->second->RaiseAndSetFocus();
     }
 }
 
@@ -445,31 +449,31 @@ void WindowManager::OnMotionNotify(const XMotionEvent& e)
     auto frameIt = m_Clients.find(e.window);
     if(frameIt != m_Clients.end())
     {
-        int dragPosX = e.x_root;
-        int dragPosY = e.y_root;
-        int deltaX = dragPosX - m_DragCursorStartX;
-        int deltaY = dragPosY - m_DragCursorStartY;
+        // int dragPosX = e.x_root;
+        // int dragPosY = e.y_root;
+        // int deltaX = dragPosX - m_DragCursorStartX;
+        // int deltaY = dragPosY - m_DragCursorStartY;
 
-        cout << "Mouse delta (x, y) = " << to_string(deltaX) << ", " << to_string(deltaY) << endl;
+        // cout << "Mouse delta (x, y) = " << to_string(deltaX) << ", " << to_string(deltaY) << endl;
 
-        if(e.state & Button1Mask) 
-        {
-            // alt + left button: Move window.
-            const int destFramePosX = m_DragFrameStartX + deltaX;
-            const int destFramePosY = m_DragFrameStartY + deltaY;
-            frameIt->second->SetLocation(destFramePosX, destFramePosY);
-        } 
-        else if (e.state & Button3Mask) 
-        {
-            // alt + right button: Resize window.
-            // Window dimensions cannot be negative.
-            const int sizeDeltaX = max(deltaX, -m_DragFrameStartWidth);
-            const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
-            const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
-            const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
-            cout << "    Resize window to (x, y) = " << destFrameSizeWidth << ", " << destFrameSizeHeight << endl;
-            frameIt->second->SetSize(destFrameSizeWidth, destFrameSizeHeight);        
-        }
+        // if(e.state & Button1Mask) 
+        // {
+        //     // alt + left button: Move window.
+        //     const int destFramePosX = m_DragFrameStartX + deltaX;
+        //     const int destFramePosY = m_DragFrameStartY + deltaY;
+        //     frameIt->second->SetLocation(destFramePosX, destFramePosY);
+        // } 
+        // else if (e.state & Button3Mask) 
+        // {
+        //     // alt + right button: Resize window.
+        //     // Window dimensions cannot be negative.
+        //     const int sizeDeltaX = max(deltaX, -m_DragFrameStartWidth);
+        //     const int sizeDeltaY = max(deltaY, -m_DragFrameStartHeight);
+        //     const int destFrameSizeWidth = m_DragFrameStartWidth + sizeDeltaX;
+        //     const int destFrameSizeHeight = m_DragFrameStartHeight + sizeDeltaY;
+        //     cout << "    Resize window to (x, y) = " << destFrameSizeWidth << ", " << destFrameSizeHeight << endl;
+        //     frameIt->second->SetSize(destFrameSizeWidth, destFrameSizeHeight);        
+        // }
     }
     else
     {

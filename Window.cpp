@@ -15,7 +15,7 @@ using namespace Pharaoh;
 
 
 // Visual properties
-const unsigned int BORDER_WIDTH = 2; // decorative border 
+const unsigned int BORDER_WIDTH = 0;//2; // decorative border 
 const unsigned int BORDER_COLOUR = 0xff0000;
 const unsigned int BG_COLOUR = 0x0000ff;
 const unsigned int CLIENT_YOFFSET = 24;
@@ -126,29 +126,29 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
 
     // grab universal window management actions on the client window
     //   a. Move windows with alt + left button.
-    XGrabButton(
-        m_pXDisplay,
-        Button1,
-        Mod1Mask,
-        m_ClientWindow,
-        false,
-        ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
-        GrabModeAsync,
-        GrabModeAsync,
-        None,
-        None);
+    // XGrabButton(
+    //     m_pXDisplay,
+    //     Button1,
+    //     Mod1Mask,
+    //     m_ClientWindow,
+    //     false,
+    //     ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+    //     GrabModeAsync,
+    //     GrabModeAsync,
+    //     None,
+    //     None);
     //   b. Resize windows with alt + right button.
-    XGrabButton(
-        m_pXDisplay,
-        Button3,
-        Mod1Mask,
-        m_ClientWindow,
-        false,
-        ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
-        GrabModeAsync,
-        GrabModeAsync,
-        None,
-        None);
+    // XGrabButton(
+    //     m_pXDisplay,
+    //     Button3,
+    //     Mod1Mask,
+    //     m_ClientWindow,
+    //     false,
+    //     ButtonPressMask | ButtonReleaseMask | ButtonMotionMask,
+    //     GrabModeAsync,
+    //     GrabModeAsync,
+    //     None,
+    //     None);
     //   c. Kill windows with alt + f4.
     XGrabKey(
         m_pXDisplay,
@@ -168,6 +168,19 @@ void PharaohWindow::Map(set<Window>& decorationWindows)
         GrabModeAsync,
         GrabModeAsync);
 
+
+    // // bring the client to the top & focus when clicked
+    // XGrabButton(
+    //     m_pXDisplay,
+    //     Button1,
+    //     None,
+    //     m_ClientWindow,
+    //     false,
+    //     ButtonPressMask,
+    //     GrabModeAsync,
+    //     GrabModeAsync,
+    //     None,
+    //     None);
 
     // grab input on the frame itself for move and resize
     XGrabButton(
