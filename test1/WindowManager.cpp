@@ -341,28 +341,28 @@ void WindowManager::OnButtonPress(const XButtonEvent& e)
     if(frameIt != m_Clients.end())
     {
         // get the frame & save the start position
-        // m_DragCursorStartX = e.x_root;
-        // m_DragCursorStartY = e.y_root;
+        m_DragCursorStartX = e.x_root;
+        m_DragCursorStartY = e.y_root;
 
-        // cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
+        cout << "Mouse start pos (x, y) = " << to_string(m_DragCursorStartX) << ", " << to_string(m_DragCursorStartY) << endl;
 
-        // // save the initial window information
-        // int x, y;
-        // unsigned int width, height;
+        // save the initial window information
+        int x, y;
+        unsigned int width, height;
 
-        // frameIt->second->GetLocation(x, y);
-        // frameIt->second->GetSize(width, height);
+        frameIt->second->GetLocation(x, y);
+        frameIt->second->GetSize(width, height);
 
-        // m_DragFrameStartX = x;
-        // m_DragFrameStartY = y;
-        // m_DragFrameStartWidth = width;
-        // m_DragFrameStartHeight = height;
-        // cout << "    (x, y, width, height) = " << x << ", " << y << ", " << width << ", " << height << endl;
+        m_DragFrameStartX = x;
+        m_DragFrameStartY = y;
+        m_DragFrameStartWidth = width;
+        m_DragFrameStartHeight = height;
+        cout << "    (x, y, width, height) = " << x << ", " << y << ", " << width << ", " << height << endl;
 
-        // cout << "Mouse pressed on client" << endl;
+        cout << "Mouse pressed on client" << endl;
 
-        // // raise the window to the top
-        // frameIt->second->RaiseAndSetFocus();
+        // raise the window to the top
+        frameIt->second->RaiseAndSetFocus();
     }
     else
     {
