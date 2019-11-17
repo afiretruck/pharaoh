@@ -28,10 +28,7 @@ CXX=$(shell which g++)
 AR=$(shell which gcc-ar)
 
 MANAGERSRC=\
-main.cpp \
-WindowManager.cpp \
-Window.cpp \
-Utils.cpp
+main.cpp 
 
 COMPILE.cxx= @echo "  CXX    "$< && $(CXX) 
 COMPILE.c= @echo "  CC     "$< && $(CC)
@@ -77,7 +74,7 @@ $(OBJDIR)/%.o.d: ;
 	
 # pharaoh
 $(BINDIR)xcbtestapp: $(MANAGER_OBJS)
-	$(COMPILE.link) $(MANAGER_OBJS) -lX11 -static-libstdc++ -o $@ 
+	$(COMPILE.link) $(MANAGER_OBJS) -lxcb -static-libstdc++ -o $@ 
 	
 
 # header dependency includes
