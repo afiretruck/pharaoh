@@ -7,7 +7,9 @@
 *********************************************************************************/
 
 #include <xcb/xcb.h>
+#include <xcb/randr.h>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -46,8 +48,66 @@ int main(int argc, char** argv)
 
     xcb_screen_t* pScreenData = screenIter.data;
 
-    // should have the screen information now
-    cout << "    size: " << pScreenData->width_in_pixels << "," << pScreenData->height_in_pixels << endl;
+    // create a dummy window
+    xcb_window_t windowDummy = xcb_generate_id(pConnection);
+	xcb_create_window(pConnection, 0, windowDummy, pScreenData->root,
+                          0, 0, 1, 1, 0, 0, 0, 0, 0);
+	xcb_flush(pConnection); // make sure requests are flushed to the x server
+
+    // get output layout information via randr extensions
+
+	// Send a request for screen resources to the X server
+	xcb_randr_get_screen_resources_cookie_t screenResCookie = {};
+	screenResCookie = xcb_randr_get_screen_resources(pConnection,
+			windowDummy);
+
+	// Receive reply from X server
+	xcb_randr_get_screen_resources_reply_t* pScreenResReply = {};
+	pScreenResReply = xcb_randr_get_screen_resources_reply(pConnection,
+					 screenResCookie, 0);
+
+	int crtcsNum = 0;
+	xcb_randr_crtc_t* pFirstCRTC;
+
+	// Get a pointer to the first CRTC and number of CRTCs
+	// It is crucial to notice that you are in fact getting
+	// an array with firstCRTC being the first element of
+	// this array and crtcs_length - length of this array
+	if(pScreenResReply != nullptr)
+	{
+		crtcsNum = xcb_randr_get_screen_resources_crtcs_length(pScreenResReply);
+		pFirstCRTC = xcb_randr_get_screen_resources_crtcs(pScreenResReply);
+	}
+	else
+	{
+		return -1;
+	}
+
+	// Array of requests to the X server for CRTC info
+	vector<xcb_randr_get_crtc_info_cookie_t> crtcResCookies(crtcsNum);
+	for(int i = 0; i < crtcsNum; i++)
+	{
+		crtcResCookies[i] = xcb_randr_get_crtc_info(pConnection, pFirstCRTC[i], 0);
+	}
+
+	// Array of pointers to replies from X server
+	vector<xcb_randr_get_crtc_info_reply_t*> crtcResReplies(crtcsNum);
+	for(int i = 0; i < crtcsNum; i++)
+	{
+		crtcResReplies[i] = xcb_randr_get_crtc_info_reply(pConnection, crtcResCookies[i], 0);
+	}
+	// Self-explanatory
+	for(int i = 0; i < crtcsNum; i++)
+	{
+		if(crtcResReplies[i] != nullptr)
+		{
+			printf("CRTC[%i] INFO:\n", i);
+			printf("x-off\t: %i\n", crtcResReplies[i]->x);
+			printf("y-off\t: %i\n", crtcResReplies[i]->y);
+			printf("width\t: %i\n", crtcResReplies[i]->width);
+			printf("height\t: %i\n\n", crtcResReplies[i]->height);
+		}
+	}
 
 
     // finished, disconnect

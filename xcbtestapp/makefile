@@ -74,7 +74,7 @@ $(OBJDIR)/%.o.d: ;
 	
 # pharaoh
 $(BINDIR)xcbtestapp: $(MANAGER_OBJS)
-	$(COMPILE.link) $(MANAGER_OBJS) -lxcb -static-libstdc++ -o $@ 
+	$(COMPILE.link) $(MANAGER_OBJS) -lxcb -lxcb-randr -static-libstdc++ -o $@ 
 	
 
 # header dependency includes
