@@ -109,6 +109,13 @@ int main(int argc, char** argv)
 		}
 	}
 
+	// free some resources
+	free(pFirstCRTC);
+	for(xcb_randr_get_crtc_info_reply_t* pCRTCInfo : crtcResReplies)
+	{
+		free(pCRTCInfo);
+	}
+
 
     // finished, disconnect
     xcb_disconnect(pConnection);
