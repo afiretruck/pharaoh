@@ -96,12 +96,14 @@ int main(int argc, char** argv)
 	{
 		crtcResReplies[i] = xcb_randr_get_crtc_info_reply(pConnection, crtcResCookies[i], 0);
 	}
+
 	// Self-explanatory
 	for(int i = 0; i < crtcsNum; i++)
 	{
 		if(crtcResReplies[i] != nullptr)
 		{
 			printf("CRTC[%i] INFO:\n", i);
+			printf("status\t: %i\n", crtcResReplies[i]->status);
 			printf("x-off\t: %i\n", crtcResReplies[i]->x);
 			printf("y-off\t: %i\n", crtcResReplies[i]->y);
 			printf("width\t: %i\n", crtcResReplies[i]->width);
@@ -110,7 +112,7 @@ int main(int argc, char** argv)
 	}
 
 	// free some resources
-	free(pFirstCRTC);
+	//free(pFirstCRTC);
 	for(xcb_randr_get_crtc_info_reply_t* pCRTCInfo : crtcResReplies)
 	{
 		free(pCRTCInfo);
