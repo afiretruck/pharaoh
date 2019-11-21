@@ -8,6 +8,7 @@
 
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
+#include <unistd.h>
 #include <iostream>
 #include <vector>
 
@@ -48,18 +49,12 @@ int main(int argc, char** argv)
 
     xcb_screen_t* pScreenData = screenIter.data;
 
-    // create a dummy window
-    xcb_window_t windowDummy = xcb_generate_id(pConnection);
-	xcb_create_window(pConnection, 0, windowDummy, pScreenData->root,
-                          0, 0, 1, 1, 0, 0, 0, 0, 0);
-	xcb_flush(pConnection); // make sure requests are flushed to the x server
-
     // get output layout information via randr extensions
 
 	// Send a request for screen resources to the X server
 	xcb_randr_get_screen_resources_cookie_t screenResCookie = {};
 	screenResCookie = xcb_randr_get_screen_resources(pConnection,
-			windowDummy);
+			pScreenData->root);
 
 	// Receive reply from X server
 	xcb_randr_get_screen_resources_reply_t* pScreenResReply = {};
@@ -110,6 +105,28 @@ int main(int argc, char** argv)
 			printf("height\t: %i\n\n", crtcResReplies[i]->height);
 		}
 	}
+
+	// define an event mask for the window
+
+
+	// create a window - create window ID, create window, map window, flush commands to server
+	xcb_window_t window = xcb_generate_id(pConnection);
+	xcb_create_window(
+			pConnection,					// xcb connection
+			XCB_COPY_FROM_PARENT,			// depth
+			window,							// window id
+			pScreenData->root,				// parent window
+			0, 0, 							// x, y
+			150, 150,						// width, height
+			10,								// border width
+			XCB_WINDOW_CLASS_INPUT_OUTPUT,	// class
+			pScreenData->root_visual,		// visual
+			0, NULL);						// masks, not yet used.
+	xcb_map_window(pConnection, window);
+	xcb_flush(pConnection);
+
+	pause();
+
 
 	// free some resources
 	//free(pFirstCRTC);
