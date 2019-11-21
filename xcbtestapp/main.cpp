@@ -107,7 +107,8 @@ int main(int argc, char** argv)
 	}
 
 	// define an event mask for the window
-
+	uint32_t masks = XCB_CW_EVENT_MASK;
+	uint32_t eventMask = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
 
 	// create a window - create window ID, create window, map window, flush commands to server
 	xcb_window_t window = xcb_generate_id(pConnection);
@@ -121,12 +122,49 @@ int main(int argc, char** argv)
 			10,								// border width
 			XCB_WINDOW_CLASS_INPUT_OUTPUT,	// class
 			pScreenData->root_visual,		// visual
-			0, NULL);						// masks, not yet used.
+			masks, 							// masks bitmap
+			&eventMask);					// masks value array
 	xcb_map_window(pConnection, window);
 	xcb_flush(pConnection);
 
-	pause();
+	// event loop
+	xcb_generic_event_t* pEv = nullptr;
+	bool keepRunning = true;
+	while(keepRunning == true && (pEv = xcb_wait_for_event(pConnection)) != nullptr)
+	{
+		switch(pEv->response_type & ~0x80)
+		{
+		case XCB_EXPOSE:
+		{
+			// handle the expose event
+			// one of this event will be sent for each of the following cases:
+			// - A window that covered part of our window has moved away, exposing part (or all) of our window.
+    		// - Our window was raised above other windows.
+    		// - Our window mapped for the first time.
+    		// - Our window was de-iconified. 
+			xcb_expose_event_t* pExpose = (xcb_expose_event_t*)pEv;
 
+			cout << "Exposed! (gasp!)" << endl;
+			break;
+		}
+		case XCB_BUTTON_PRESS:
+		{
+			// handle the button press event
+			xcb_button_press_event_t* pButtonPress = (xcb_button_press_event_t*)pEv;
+			
+			cout << "Button pressed!" << endl;
+			break;
+		}
+		// how to respond to window closing?
+		// case :
+		// {
+		// 	keepRunning = false;
+		// 	break;
+		// }
+		}
+
+		free(pEv);
+	}
 
 	// free some resources
 	//free(pFirstCRTC);
