@@ -106,11 +106,14 @@ int main(int argc, char** argv)
 		}
 	}
 
-	// define an event mask for the window
-	uint32_t masks = XCB_CW_EVENT_MASK;
-	uint32_t eventMask = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
+	// define an event mask for the window & the background colour
+	uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+	uint32_t eventMask[2] =
+	{
+			0x000000ff,
+			XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+	};
 
-	// TODO: set the window background colour
 	// create a window - create window ID, create window, map window, flush commands to server
 	xcb_window_t window = xcb_generate_id(pConnection);
 	xcb_create_window(
