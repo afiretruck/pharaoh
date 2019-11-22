@@ -108,8 +108,9 @@ int main(int argc, char** argv)
 
 	// define an event mask for the window
 	uint32_t masks = XCB_CW_EVENT_MASK;
-	uint32_t eventMask = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS;
+	uint32_t eventMask = XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY;
 
+	// TODO: set the window background colour
 	// create a window - create window ID, create window, map window, flush commands to server
 	xcb_window_t window = xcb_generate_id(pConnection);
 	xcb_create_window(
@@ -124,13 +125,33 @@ int main(int argc, char** argv)
 			pScreenData->root_visual,		// visual
 			masks, 							// masks bitmap
 			&eventMask);					// masks value array
+
+
+
+	// get some handy atoms
+	const string wmProtocolsStr = "WM_PROTOCOLS";
+	const string wmDeleteWindowStr = "WM_DELETE_WINDOW";
+	xcb_intern_atom_cookie_t protocolAtomCookie = xcb_intern_atom(pConnection, 1, wmProtocolsStr.length(), wmProtocolsStr.c_str());
+	xcb_intern_atom_cookie_t deleteWindowAtomCookie = xcb_intern_atom(pConnection, 0, wmDeleteWindowStr.length(), wmDeleteWindowStr.c_str());
+
+	xcb_intern_atom_reply_t* pProtocolAtomReply = xcb_intern_atom_reply(pConnection, protocolAtomCookie, nullptr);
+	xcb_intern_atom_reply_t* pDeleteWindowAtomReply = xcb_intern_atom_reply(pConnection, deleteWindowAtomCookie, nullptr);
+
+	// tell the x server we want to participate in the window delete protocol
+	xcb_change_property(pConnection, XCB_PROP_MODE_REPLACE, window, pProtocolAtomReply->atom, XCB_ATOM_ATOM, 32, 1, &(pDeleteWindowAtomReply->atom));
+
+	// map the window and flush
 	xcb_map_window(pConnection, window);
 	xcb_flush(pConnection);
 
+	// TODO: create a button. This button will close the window.
+
+
+
 	// event loop
 	xcb_generic_event_t* pEv = nullptr;
-	bool keepRunning = true;
-	while(keepRunning == true && (pEv = xcb_wait_for_event(pConnection)) != nullptr)
+	bool keepGoing = true;
+	while(keepGoing == true && (pEv = xcb_wait_for_event(pConnection)) != nullptr)
 	{
 		switch(pEv->response_type & ~0x80)
 		{
@@ -155,12 +176,37 @@ int main(int argc, char** argv)
 			cout << "Button pressed!" << endl;
 			break;
 		}
-		// how to respond to window closing?
-		// case :
-		// {
-		// 	keepRunning = false;
-		// 	break;
-		// }
+		case XCB_CLIENT_MESSAGE:
+		{
+			xcb_client_message_event_t* pClientMessage = (xcb_client_message_event_t*)pEv;
+			if(pClientMessage->data.data32[0] == pDeleteWindowAtomReply->atom)
+			{
+				if(pClientMessage->window == window)
+				{
+					cout << "Window delete requested!" << endl;
+
+					// tell the server to delete the window
+					xcb_void_cookie_t ck = xcb_destroy_window_checked(pConnection, pClientMessage->window);
+					xcb_generic_error_t* pError = xcb_request_check(pConnection, ck);
+
+					if(pError != nullptr)
+					{
+						cout << "Failed to delete the window!" << endl;
+						free(pError);
+					}
+				}
+			}
+		 	break;
+		}
+		case XCB_DESTROY_NOTIFY:
+		{
+			xcb_destroy_notify_event_t* pDestroyNotify = (xcb_destroy_notify_event_t*)pEv;
+			if(pDestroyNotify->window == window)
+			{
+				keepGoing = false;
+				cout << "Window destroyed!" << endl;
+			}
+		}
 		}
 
 		free(pEv);
@@ -168,6 +214,8 @@ int main(int argc, char** argv)
 
 	// free some resources
 	//free(pFirstCRTC);
+	free(pProtocolAtomReply);
+	free(pDeleteWindowAtomReply);
 	for(xcb_randr_get_crtc_info_reply_t* pCRTCInfo : crtcResReplies)
 	{
 		free(pCRTCInfo);
