@@ -334,9 +334,12 @@ int main(int argc, char** argv)
 			// handle the button press event
 			xcb_button_press_event_t* pButtonPress = (xcb_button_press_event_t*)pEv;
 
-			if(pButtonPress->event == buttonWindow )
+			if(pButtonPress->event == buttonWindow && pButtonPress->detail == XCB_BUTTON_INDEX_1)
 			{
 				cout << "button pressed on button window" << endl;
+				cout << "detail: \t\t0x" << hex << (int)pButtonPress->detail << endl;
+				cout << "sequence: \t\t0x" << hex << (int)pButtonPress->sequence << endl;
+				cout << "state: \t\t0x" << hex << (int)pButtonPress->state << endl;
 
 				buttonHeld = true;
 
@@ -362,7 +365,7 @@ int main(int argc, char** argv)
 			// handle the button release event
 			xcb_button_release_event_t* pButtonRelease = (xcb_button_release_event_t*)pEv;
 
-			if(pButtonRelease->event == buttonWindow)
+			if(pButtonRelease->event == buttonWindow && pButtonRelease->detail == XCB_BUTTON_INDEX_1)
 			{
 				cout << "button released on button window" << endl;
 
