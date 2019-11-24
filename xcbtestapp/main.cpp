@@ -8,11 +8,17 @@
 
 #include <xcb/xcb.h>
 #include <xcb/randr.h>
+#include <xcb/xcb_image.h>
 #include <unistd.h>
 #include <iostream>
 #include <vector>
 
+#define cimg_use_jpeg
+#define cimg_use_png
+#include "CImg.h"
+
 using namespace std;
+using namespace cimg_library;
 
 // Following basic tutorial. The purpose of this program is to get familiar with XCB 
 // by building a client application first:
@@ -108,9 +114,9 @@ int main(int argc, char** argv)
 
 	// define an event mask for the window & the background colour
 	uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
-	uint32_t eventMask[2] =
+	uint32_t mainWindowMask[2] =
 	{
-			0x000000ff,
+			0x00999999,
 			XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY
 	};
 
@@ -122,12 +128,12 @@ int main(int argc, char** argv)
 			window,							// window id
 			pScreenData->root,				// parent window
 			0, 0, 							// x, y
-			150, 150,						// width, height
+			300, 300,						// width, height
 			10,								// border width
 			XCB_WINDOW_CLASS_INPUT_OUTPUT,	// class
 			pScreenData->root_visual,		// visual
 			masks, 							// masks bitmap
-			&eventMask);					// masks value array
+			&mainWindowMask);				// masks value array
 
 
 
@@ -147,8 +153,146 @@ int main(int argc, char** argv)
 	xcb_map_window(pConnection, window);
 	xcb_flush(pConnection);
 
-	// TODO: create a button. This button will close the window.
+	// create a button. This button will close the window.
+	// how to do this? create a small child window and handle mouse-over and stuff?
+	uint32_t buttonMask[2] =
+	{
+			0x00ffffff,
+			XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_ENTER_WINDOW | XCB_EVENT_MASK_LEAVE_WINDOW | XCB_EVENT_MASK_EXPOSURE
+	};
+	xcb_window_t buttonWindow = xcb_generate_id(pConnection);
+	xcb_create_window(
+			pConnection,					// xcb connection
+			XCB_COPY_FROM_PARENT,			// depth
+			buttonWindow,					// window id
+			window,							// parent window
+			0, 0, 							// x, y
+			31, 17,							// width, height
+			0,								// border width
+			XCB_WINDOW_CLASS_INPUT_OUTPUT,	// class
+			pScreenData->root_visual,		// visual
+			masks, 							// masks bitmap
+			&buttonMask);					// masks value array
 
+	// find the right pixmap format
+	xcb_format_t* pFormats = xcb_setup_pixmap_formats(pSetup);
+	xcb_format_t* pFormat = nullptr;
+	uint32_t numFormats = xcb_setup_pixmap_formats_length(pSetup);
+	for(uint32_t i = 0; i < numFormats; i++)
+	{
+		// 24 bit depth with 32 bits per pixel
+		if(pFormats[i].bits_per_pixel == 32 && pFormats[i].depth == 24)
+		{
+			pFormat = &pFormats[i];
+		}
+	}
+
+	// show the button
+	xcb_map_window(pConnection, buttonWindow);
+	xcb_flush(pConnection);
+
+
+
+	// read in PNG with Cimg
+	CImg<unsigned char> buttonImageReader("X-normal.png");
+	CImg<unsigned char> buttonHighlightedImageReader("X-highlighted.png");
+	CImg<unsigned char> buttonClickedImageReader("X-clicked.png");
+
+	unsigned char *image32=(unsigned char *)malloc(buttonImageReader.width()*buttonImageReader.height()*4);
+	unsigned char *image32Highlighted=(unsigned char *)malloc(buttonImageReader.width()*buttonImageReader.height()*4);
+	unsigned char *image32Clicked=(unsigned char *)malloc(buttonImageReader.width()*buttonImageReader.height()*4);
+	for(int y = 0; y < buttonImageReader.height(); y++)
+	{
+		for(int x = 0; x < buttonImageReader.width(); x++)
+		{
+			image32[(y*buttonImageReader.width() + x)*4] = buttonImageReader(x, y, 0, 2);
+			image32[(y*buttonImageReader.width() + x)*4 + 1] = buttonImageReader(x, y, 0, 1);
+			image32[(y*buttonImageReader.width() + x)*4 + 2] = buttonImageReader(x, y, 0, 0);
+			image32[(y*buttonImageReader.width() + x)*4 + 3] = 0x00;
+
+			image32Highlighted[(y*buttonImageReader.width() + x)*4] = buttonHighlightedImageReader(x, y, 0, 2);
+			image32Highlighted[(y*buttonImageReader.width() + x)*4 + 1] = buttonHighlightedImageReader(x, y, 0, 1);
+			image32Highlighted[(y*buttonImageReader.width() + x)*4 + 2] = buttonHighlightedImageReader(x, y, 0, 0);
+			image32Highlighted[(y*buttonImageReader.width() + x)*4 + 3] = 0x00;
+
+			image32Clicked[(y*buttonImageReader.width() + x)*4] = buttonClickedImageReader(x, y, 0, 2);
+			image32Clicked[(y*buttonImageReader.width() + x)*4 + 1] = buttonClickedImageReader(x, y, 0, 1);
+			image32Clicked[(y*buttonImageReader.width() + x)*4 + 2] = buttonClickedImageReader(x, y, 0, 0);
+			image32Clicked[(y*buttonImageReader.width() + x)*4 + 3] = 0x00;
+		}
+	}
+
+	xcb_image_t* pButtonImage = xcb_image_create(
+		buttonImageReader.width(),
+		buttonImageReader.height(),
+		XCB_IMAGE_FORMAT_Z_PIXMAP,
+		pFormat->scanline_pad,
+		pFormat->depth,
+		pFormat->bits_per_pixel,
+		0,
+		(xcb_image_order_t)pSetup->image_byte_order,
+		XCB_IMAGE_ORDER_LSB_FIRST,
+		image32,
+		buttonImageReader.width()*buttonImageReader.height()*4,
+		image32);
+
+
+	xcb_image_t* pButtonImageHighlighted = xcb_image_create(
+		buttonHighlightedImageReader.width(),
+		buttonHighlightedImageReader.height(),
+		XCB_IMAGE_FORMAT_Z_PIXMAP,
+		pFormat->scanline_pad,
+		pFormat->depth,
+		pFormat->bits_per_pixel,
+		0,
+		(xcb_image_order_t)pSetup->image_byte_order,
+		XCB_IMAGE_ORDER_LSB_FIRST,
+		image32Highlighted,
+		buttonHighlightedImageReader.width()*buttonHighlightedImageReader.height()*4,
+		image32Highlighted);
+
+
+	xcb_image_t* pButtonImageClicked = xcb_image_create(
+		buttonClickedImageReader.width(),
+		buttonClickedImageReader.height(),
+		XCB_IMAGE_FORMAT_Z_PIXMAP,
+		pFormat->scanline_pad,
+		pFormat->depth,
+		pFormat->bits_per_pixel,
+		0,
+		(xcb_image_order_t)pSetup->image_byte_order,
+		XCB_IMAGE_ORDER_LSB_FIRST,
+		image32Clicked,
+		buttonClickedImageReader.width()*buttonClickedImageReader.height()*4,
+		image32Clicked);
+
+	xcb_pixmap_t buttonPixmap = xcb_generate_id(pConnection);
+	xcb_create_pixmap(pConnection, 24, buttonPixmap, buttonWindow, buttonImageReader.width(), buttonImageReader.height());
+
+	xcb_pixmap_t buttonPixmapHighlighted = xcb_generate_id(pConnection);
+	xcb_create_pixmap(pConnection, 24, buttonPixmapHighlighted, buttonWindow, buttonHighlightedImageReader.width(), buttonHighlightedImageReader.height());
+
+	xcb_pixmap_t buttonPixmapClicked = xcb_generate_id(pConnection);
+	xcb_create_pixmap(pConnection, 24, buttonPixmapClicked, buttonWindow, buttonClickedImageReader.width(), buttonClickedImageReader.height());
+
+	uint32_t buttonPixmapMask = XCB_GC_FOREGROUND | XCB_GC_BACKGROUND;
+ 	uint32_t buttonPixmapValues[2] =
+	{
+		0,
+		0x00ffffff
+	};
+	xcb_gcontext_t buttonContext = xcb_generate_id(pConnection);
+	xcb_create_gc(pConnection, buttonContext, buttonPixmap, buttonPixmapMask, buttonPixmapValues);
+
+	xcb_image_put(pConnection, buttonPixmap, buttonContext, pButtonImage, 0, 0, 0);
+	xcb_image_put(pConnection, buttonPixmapHighlighted, buttonContext, pButtonImageHighlighted, 0, 0, 0);
+	xcb_image_put(pConnection, buttonPixmapClicked, buttonContext, pButtonImageClicked, 0, 0, 0);
+
+	xcb_flush(pConnection);
+
+	// some button control variables
+	bool buttonHeld = false;
+	bool mouseOver = false;
 
 
 	// event loop
@@ -168,6 +312,20 @@ int main(int argc, char** argv)
     		// - Our window was de-iconified. 
 			xcb_expose_event_t* pExpose = (xcb_expose_event_t*)pEv;
 
+			if(pExpose->window == buttonWindow)
+			{
+				cout << "Button exposed!" << endl;
+				xcb_copy_area(
+					pConnection, buttonPixmap, buttonWindow, buttonContext,
+					pExpose->x,
+					pExpose->y,
+					pExpose->x,
+					pExpose->y,
+					pExpose->width,
+					pExpose->height);
+				xcb_flush(pConnection);
+			}
+
 			cout << "Exposed! (gasp!)" << endl;
 			break;
 		}
@@ -175,8 +333,116 @@ int main(int argc, char** argv)
 		{
 			// handle the button press event
 			xcb_button_press_event_t* pButtonPress = (xcb_button_press_event_t*)pEv;
+
+			if(pButtonPress->event == buttonWindow )
+			{
+				cout << "button pressed on button window" << endl;
+
+				buttonHeld = true;
+
+				xcb_copy_area(
+					pConnection, buttonPixmapClicked, buttonWindow, buttonContext,
+					0,
+					0,
+					0,
+					0,
+					31,
+					17);
+				xcb_flush(pConnection);
+			}
+			else if(pButtonPress->event == window)
+			{
+				cout << "button pressed on main window" << endl;
+			}
 			
-			cout << "Button pressed!" << endl;
+			break;
+		}
+		case XCB_BUTTON_RELEASE:
+		{
+			// handle the button release event
+			xcb_button_release_event_t* pButtonRelease = (xcb_button_release_event_t*)pEv;
+
+			if(pButtonRelease->event == buttonWindow)
+			{
+				cout << "button released on button window" << endl;
+
+				buttonHeld = false;
+
+				xcb_copy_area(
+					pConnection, buttonPixmapHighlighted, buttonWindow, buttonContext,
+					0,
+					0,
+					0,
+					0,
+					31,
+					17);
+				xcb_flush(pConnection);
+			}
+
+			break;
+		}
+		case XCB_ENTER_NOTIFY:
+		{
+			// pointer entered window
+			xcb_enter_notify_event_t* pEntered = (xcb_enter_notify_event_t*)pEv;
+
+			if(pEntered->event == buttonWindow)
+			{
+				cout << "mouse over button!" << endl;
+
+				mouseOver = true;
+
+				if(buttonHeld)
+				{
+					xcb_copy_area(
+						pConnection, buttonPixmapClicked, buttonWindow, buttonContext,
+						0,
+						0,
+						0,
+						0,
+						31,
+						17);
+					xcb_flush(pConnection);
+				}
+				else
+				{
+					xcb_copy_area(
+						pConnection, buttonPixmapHighlighted, buttonWindow, buttonContext,
+						0,
+						0,
+						0,
+						0,
+						31,
+						17);
+					xcb_flush(pConnection);
+				}
+			}
+
+			break;
+		}
+		case XCB_LEAVE_NOTIFY:
+		{
+			// pointer left window
+			xcb_leave_notify_event_t* pLeft = (xcb_leave_notify_event_t*)pEv;
+
+			if(pLeft->event == buttonWindow)
+			{
+				cout << "mouse left button!" << endl;
+
+				mouseOver = false;
+
+				xcb_copy_area(
+					pConnection, buttonPixmap, buttonWindow, buttonContext,
+					0,
+					0,
+					0,
+					0,
+					31,
+					17);
+				xcb_flush(pConnection);
+			}
+
+
 			break;
 		}
 		case XCB_CLIENT_MESSAGE:
