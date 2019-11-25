@@ -7,6 +7,7 @@
 *********************************************************************************/
 
 #include "Button.h"
+#include <vector>
 
 #define cimg_use_png
 #include "CImg.h"
@@ -33,6 +34,11 @@ Button::Button(
     const string& highlightedImage,
     const string& clickedImage,
     const function<void()>& onClick)
+	: m_pConnection(pConnection)
+	, m_ButtonHeld(false)
+	, m_MouseOver(false)
+	, m_Width(width)
+	, m_Height(height)
 {
     // create the button window
     uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
