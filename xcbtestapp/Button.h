@@ -52,6 +52,7 @@ namespace Emperor
         bool m_MouseOver;
         int m_Width;
         int m_Height;
+        const std::function<void()>& OnClick;
 
         enum class ImageType
         {

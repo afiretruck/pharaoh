@@ -39,6 +39,7 @@ Button::Button(
 	, m_MouseOver(false)
 	, m_Width(width)
 	, m_Height(height)
+    , OnClick(onClick)
 {
     // create the button window
     uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
@@ -220,6 +221,11 @@ void Button::ButtonReleaseEvent(xcb_button_release_event_t* pEvent)
 	{
 		m_ButtonHeld = false;
 		DrawButton(ImageType::Highlighted);
+
+        if(m_MouseOver == true)
+        {
+            OnClick();
+        }
 	}
 }
 
