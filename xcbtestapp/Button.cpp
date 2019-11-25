@@ -168,7 +168,7 @@ Button::Button(
     }
 
     // TODO: anything else?
-
+    xcb_flush(pConnection);
 }
 
 Button::~Button()
@@ -191,27 +191,55 @@ xcb_window_t Button::GetWindow() const
 
 void Button::ExposeEvent(xcb_expose_event_t* pEvent)
 {
-
+	if(m_ButtonHeld == true)
+	{
+		DrawButton(ImageType::Clicked);
+	}
+	else if(m_MouseOver == true)
+	{
+		DrawButton(ImageType::Highlighted);
+	}
+	else
+	{
+		DrawButton(ImageType::Normal);
+	}
 }
 
 void Button::ButtonPressEvent(xcb_button_press_event_t* pEvent)
 {
-
+	if(pEvent->detail == XCB_BUTTON_INDEX_1)
+	{
+		m_ButtonHeld = true;
+		DrawButton(ImageType::Clicked);
+	}
 }
 
 void Button::ButtonReleaseEvent(xcb_button_release_event_t* pEvent)
 {
-
+	if(pEvent->detail == XCB_BUTTON_INDEX_1)
+	{
+		m_ButtonHeld = false;
+		DrawButton(ImageType::Highlighted);
+	}
 }
 
 void Button::MouseEnterEvent(xcb_enter_notify_event_t* pEvent)
 {
-
+	m_MouseOver = true;
+	if(m_ButtonHeld == true)
+	{
+		DrawButton(ImageType::Clicked);
+	}
+	else
+	{
+		DrawButton(ImageType::Highlighted);
+	}
 }
 
 void Button::MouseLeaveEvent(xcb_leave_notify_event_t* pEvent)
 {
-
+	m_MouseOver = false;
+	DrawButton(ImageType::Normal);
 }
 
 //---------------------------------------------------------------------------------

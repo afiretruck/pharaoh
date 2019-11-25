@@ -28,6 +28,7 @@ CXX=$(shell which g++)
 AR=$(shell which gcc-ar)
 
 MANAGERSRC=\
+Button.cpp \
 main.cpp 
 
 COMPILE.cxx= @echo "  CXX    "$< && $(CXX) 

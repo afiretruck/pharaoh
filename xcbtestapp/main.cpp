@@ -12,6 +12,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <vector>
+#include <memory>
+
+#include "Button.h"
 
 #define cimg_use_jpeg
 #define cimg_use_png
@@ -19,6 +22,7 @@
 
 using namespace std;
 using namespace cimg_library;
+using namespace Emperor;
 
 // Following basic tutorial. The purpose of this program is to get familiar with XCB 
 // by building a client application first:
@@ -295,6 +299,19 @@ int main(int argc, char** argv)
 	bool mouseOver = false;
 
 
+	// create an encapsulated button
+	unique_ptr<Button> xButton(new Button(
+			31, 17,
+			0, 20,
+			window,
+			pConnection,
+			pScreenData,
+			"X-normal.png",
+			"X-highlighted.png",
+			"X-clicked.png",
+			[](){}));
+
+
 	// event loop
 	xcb_generic_event_t* pEv = nullptr;
 	bool keepGoing = true;
@@ -324,6 +341,10 @@ int main(int argc, char** argv)
 					pExpose->width,
 					pExpose->height);
 				xcb_flush(pConnection);
+			}
+			else if(pExpose->window == xButton->GetWindow())
+			{
+				xButton->ExposeEvent(pExpose);
 			}
 
 			cout << "Exposed! (gasp!)" << endl;
@@ -357,6 +378,10 @@ int main(int argc, char** argv)
 			{
 				cout << "button pressed on main window" << endl;
 			}
+			else if(pButtonPress->event == xButton->GetWindow())
+			{
+				xButton->ButtonPressEvent(pButtonPress);
+			}
 			
 			break;
 		}
@@ -380,6 +405,10 @@ int main(int argc, char** argv)
 					31,
 					17);
 				xcb_flush(pConnection);
+			}
+			else if(pButtonRelease->event == xButton->GetWindow())
+			{
+				xButton->ButtonReleaseEvent(pButtonRelease);
 			}
 
 			break;
@@ -420,6 +449,10 @@ int main(int argc, char** argv)
 					xcb_flush(pConnection);
 				}
 			}
+			else if(pEntered->event == xButton->GetWindow())
+			{
+				xButton->MouseEnterEvent(pEntered);
+			}
 
 			break;
 		}
@@ -443,6 +476,10 @@ int main(int argc, char** argv)
 					31,
 					17);
 				xcb_flush(pConnection);
+			}
+			else if(pLeft->event == xButton->GetWindow())
+			{
+				xButton->MouseLeaveEvent(pLeft);
 			}
 
 
