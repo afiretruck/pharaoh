@@ -16,12 +16,7 @@
 
 #include "Button.h"
 
-#define cimg_use_jpeg
-#define cimg_use_png
-#include "CImg.h"
-
 using namespace std;
-using namespace cimg_library;
 using namespace Emperor;
 
 // Following basic tutorial. The purpose of this program is to get familiar with XCB 
@@ -158,8 +153,6 @@ int main(int argc, char** argv)
 	xcb_flush(pConnection);
 
 
-	bool keepGoing = true;
-
 	// create an encapsulated button
 	unique_ptr<Button> xButton(new Button(
 			31, 17,
@@ -170,11 +163,22 @@ int main(int argc, char** argv)
 			"X-normal.png",
 			"X-highlighted.png",
 			"X-clicked.png",
-			[&keepGoing](){keepGoing = false;}));
+			[window, pConnection]()
+			{
+				xcb_void_cookie_t ck = xcb_destroy_window_checked(pConnection, window);
+				xcb_generic_error_t* pError = xcb_request_check(pConnection, ck);
+
+				if(pError != nullptr)
+				{
+					cout << "Failed to delete the window!" << endl;
+					free(pError);
+				}
+			}));
 
 
 	// event loop
 	xcb_generic_event_t* pEv = nullptr;
+	bool keepGoing = true;
 	while(keepGoing == true && (pEv = xcb_wait_for_event(pConnection)) != nullptr)
 	{
 		switch(pEv->response_type & ~0x80)

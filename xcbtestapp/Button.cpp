@@ -8,6 +8,7 @@
 
 #include "Button.h"
 #include <vector>
+#include <iostream>
 
 #define cimg_use_png
 #include "CImg.h"
@@ -168,13 +169,31 @@ Button::Button(
         xcb_image_put(pConnection, m_ButtonPixmaps[i], m_GraphicsContext, m_ButtonImages[i], 0, 0, 0);
     }
 
-    // TODO: anything else?
     xcb_flush(pConnection);
 }
 
 Button::~Button()
 {
-    // TODO: destory studff
+	xcb_void_cookie_t eck = xcb_free_gc_checked(m_pConnection, m_GraphicsContext);
+	xcb_generic_error_t* pError = xcb_request_check(m_pConnection, eck);
+	if(pError != nullptr)
+	{
+		// failed to free the graphics context
+		free(pError);
+	}
+
+	for(size_t i = 0; i < m_ButtonPixmaps.size(); i++)
+	{
+		eck = xcb_free_pixmap_checked(m_pConnection, m_ButtonPixmaps[i]);
+		pError = xcb_request_check(m_pConnection, eck);
+		if(pError != nullptr)
+		{
+			// failed to free pixmap
+			free(pError);
+		}
+
+		free(m_ButtonImages[i]);
+	}
 }
 
 //---------------------------------------------------------------------------------
