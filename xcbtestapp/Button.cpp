@@ -8,7 +8,6 @@
 
 #include "Button.h"
 #include <vector>
-#include <iostream>
 
 #define cimg_use_png
 #include "CImg.h"
@@ -16,8 +15,6 @@
 using namespace std;
 using namespace cimg_library;
 using namespace Emperor;
-
-// TODO: add error checking
 
 //---------------------------------------------------------------------------------
 // Ctor & Dtor
@@ -98,39 +95,46 @@ Button::Button(
     // generate each image
     for(int i = 0; i < 3; i++)
     {
-        // read in the image
-        CImg<unsigned char> imageReader(names[i].c_str());
+    	try
+    	{
+			// read in the image
+			CImg<unsigned char> imageReader(names[i].c_str());
 
-        // copy to temp buffer
-        if(bytesPerPixel > 3)
-        {
-            for(int y = 0; y < height; y++)
-            {
-                for(int x = 0; x < width; x++)
-                {
-                    uint32_t base = (y * width + x) * bytesPerPixel + (y * linePadBytes);
+			// copy to temp buffer
+			if(bytesPerPixel > 3)
+			{
+				for(int y = 0; y < height; y++)
+				{
+					for(int x = 0; x < width; x++)
+					{
+						uint32_t base = (y * width + x) * bytesPerPixel + (y * linePadBytes);
 
-                    imageBuffer[base] = imageReader(x, y, 0, 2);
-                    imageBuffer[base + 1] = imageReader(x, y, 0, 1);
-                    imageBuffer[base + 2] = imageReader(x, y, 0, 0);
-                    imageBuffer[base + 3] = 0x00;
-                }
-            }
-        }
-        else
-        {
-            for(int y = 0; y < height; y++)
-            {
-                for(int x = 0; x < width; x++)
-                {
-                    uint32_t base = (y * width + x) * bytesPerPixel + (y * linePadBytes);
+						imageBuffer[base] = imageReader(x, y, 0, 2);
+						imageBuffer[base + 1] = imageReader(x, y, 0, 1);
+						imageBuffer[base + 2] = imageReader(x, y, 0, 0);
+						imageBuffer[base + 3] = 0x00;
+					}
+				}
+			}
+			else
+			{
+				for(int y = 0; y < height; y++)
+				{
+					for(int x = 0; x < width; x++)
+					{
+						uint32_t base = (y * width + x) * bytesPerPixel + (y * linePadBytes);
 
-                    imageBuffer[base] = imageReader(x, y, 0, 2);
-                    imageBuffer[base + 1] = imageReader(x, y, 0, 1);
-                    imageBuffer[base + 2] = imageReader(x, y, 0, 0);
-                }
-            }
-        }
+						imageBuffer[base] = imageReader(x, y, 0, 2);
+						imageBuffer[base + 1] = imageReader(x, y, 0, 1);
+						imageBuffer[base + 2] = imageReader(x, y, 0, 0);
+					}
+				}
+			}
+    	}
+    	catch(CImgIOException& e)
+    	{
+    		// TODO: log this error
+    	}
 
         // create xlib image
         m_ButtonImages[i] = xcb_image_create(

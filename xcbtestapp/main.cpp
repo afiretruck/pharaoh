@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 			window,
 			pConnection,
 			pScreenData,
-			"X-normal.png",
+			"X-normal2.png",
 			"X-highlighted.png",
 			"X-clicked.png",
 			[window, pConnection]()
