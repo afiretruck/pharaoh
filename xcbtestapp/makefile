@@ -29,6 +29,7 @@ AR=$(shell which gcc-ar)
 
 MANAGERSRC=\
 Button.cpp \
+Logger.cpp \
 main.cpp 
 
 COMPILE.cxx= @echo "  CXX    "$< && $(CXX) 

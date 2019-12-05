@@ -152,15 +152,22 @@ int main(int argc, char** argv)
 	xcb_map_window(pConnection, window);
 	xcb_flush(pConnection);
 
+	LogCallback logger(
+		[](const string& msg) { cout << "[ DEBUG ]" << msg << endl; },
+		[](const string& msg) { cout << "[MESSAGE]" << msg << endl; },
+		[](const string& msg) { cout << "[WARNING]" << msg << endl; },
+		[](const string& msg) { cout << "[ ERROR ]" << msg << endl; });
 
 	// create an encapsulated button
 	unique_ptr<Button> xButton(new Button(
+			"TestButton",
+			logger,
 			31, 17,
 			0, 20,
 			window,
 			pConnection,
 			pScreenData,
-			"X-normal2.png",
+			"X-normal.png",
 			"X-highlighted.png",
 			"X-clicked.png",
 			[window, pConnection]()
