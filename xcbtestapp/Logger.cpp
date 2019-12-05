@@ -9,15 +9,13 @@
 #include "Logger.h"
 
 using namespace std;
-using namespace MiraiEngine;
-using namespace MiraiEngine::Renderer;
-using namespace MiraiEngine::Renderer::Vulkan;
+using namespace Emperor;
 
 //--------------------------------------------------------------------------------
-// VLogCallback
+// LogCallback
 //--------------------------------------------------------------------------------
 
-VLogCallback::VLogCallback(
+LogCallback::LogCallback(
 	function<void(const string&)> logDebug,
 	function<void(const string&)> logMessage,
 	function<void(const string&)> logWarning,
@@ -30,22 +28,22 @@ VLogCallback::VLogCallback(
 
 }
 
-void VLogCallback::LogDebug(const string& msg) const
+void LogCallback::LogDebug(const string& msg) const
 {
 	m_LogDebug(msg);
 }
 
-void VLogCallback::LogMessage(const string& msg) const
+void LogCallback::LogMessage(const string& msg) const
 {
 	m_LogMessage(msg);
 }
 
-void VLogCallback::LogWarning(const string& msg) const
+void LogCallback::LogWarning(const string& msg) const
 {
 	m_LogWarning(msg);
 }
 
-void VLogCallback::LogError(const string& msg) const
+void LogCallback::LogError(const string& msg) const
 {
 	m_LogError(msg);
 }
@@ -54,15 +52,15 @@ void VLogCallback::LogError(const string& msg) const
 // Logger
 //--------------------------------------------------------------------------------
 
-Logger::Logger(VLogCallback& logger)
+Logger::Logger(LogCallback& logger)
 	: m_LogCallback(logger)
 {
 
 }
 
-VLogCallback& Logger::GetLogger() const
+LogCallback& Logger::GetLogger() const
 {
-	return const_cast<VLogCallback&>(m_LogCallback);
+	return const_cast<LogCallback&>(m_LogCallback);
 }
 
 void Logger::SetLoggingName(const string& name)

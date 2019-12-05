@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "Logger.h"
 #include <xcb/xcb.h>
 #include <xcb/xcb_image.h>
 #include <string>
@@ -16,10 +17,12 @@
 
 namespace Emperor
 {
-    class Button
+    class Button : public Logger
     {
     public:
         Button(
+            const std::string& name,
+            LogCallback& logger,
             int width,
             int height,
             int x,

@@ -21,6 +21,8 @@ using namespace Emperor;
 //---------------------------------------------------------------------------------
 
 Button::Button(
+    const string& name,
+    LogCallback& logger,
     int width,
     int height,
     int x,
@@ -32,13 +34,16 @@ Button::Button(
     const string& highlightedImage,
     const string& clickedImage,
     const function<void()>& onClick)
-	: m_pConnection(pConnection)
+	: Logger(logger)
+    , m_pConnection(pConnection)
 	, m_ButtonHeld(false)
 	, m_MouseOver(false)
 	, m_Width(width)
 	, m_Height(height)
     , OnClick(onClick)
 {
+    SetLoggingName(name);
+
     // create the button window
     uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     uint32_t buttonMask[2] =
@@ -133,7 +138,8 @@ Button::Button(
     	}
     	catch(CImgIOException& e)
     	{
-    		// TODO: log this error
+    		// log this error
+            LogError(e._message);
     	}
 
         // create xlib image
@@ -183,6 +189,7 @@ Button::~Button()
 	if(pError != nullptr)
 	{
 		// failed to free the graphics context
+        LogError("Failed to free graphics context.");
 		free(pError);
 	}
 
@@ -193,6 +200,7 @@ Button::~Button()
 		if(pError != nullptr)
 		{
 			// failed to free pixmap
+            LogError("Failed to free button pixmap " + to_string(i));
 			free(pError);
 		}
 
