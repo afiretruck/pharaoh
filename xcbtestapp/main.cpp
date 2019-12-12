@@ -115,11 +115,12 @@ int main(int argc, char** argv)
 	uint32_t masks = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
 	uint32_t mainWindowMask[2] =
 	{
-			0x00999999,
+			0x009999ff,
 			XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_STRUCTURE_NOTIFY
 	};
 
-	// create a window - create window ID, create window, map window, flush commands to server
+	
+	// create a test top level window - create window ID, create window, map window, flush commands to server
 	xcb_window_t window = xcb_generate_id(pConnection);
 	xcb_create_window(
 			pConnection,					// xcb connection
@@ -128,12 +129,11 @@ int main(int argc, char** argv)
 			pScreenData->root,				// parent window
 			0, 0, 							// x, y
 			300, 300,						// width, height
-			10,								// border width
+			0,								// border width (0 - we create our own border)
 			XCB_WINDOW_CLASS_INPUT_OUTPUT,	// class
 			pScreenData->root_visual,		// visual
 			masks, 							// masks bitmap
 			&mainWindowMask);				// masks value array
-
 
 
 	// get some handy atoms
